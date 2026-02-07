@@ -115,6 +115,19 @@ export function Header() {
                                         </div>
                                         Add Another Account
                                     </Link>
+
+                                    {activeSession?.user.roles.includes('SELLER') && (
+                                        <Link
+                                            href="/seller"
+                                            onClick={() => setIsAccountOpen(false)}
+                                            className="mt-1 flex items-center gap-3 rounded-lg bg-indigo-50 px-3 py-2 text-sm font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
+                                        >
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white">
+                                                <Plus className="h-4 w-4" />
+                                            </div>
+                                            My Shop (Dashboard)
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         )}
