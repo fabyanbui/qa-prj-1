@@ -9,15 +9,29 @@ export default function SignupPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [roles, setRoles] = useState<string[]>(['BUYER']);
     const [error, setError] = useState('');
     const { signup, isLoading } = useAuth();
     const router = useRouter();
+
+    const toggleRole = (role: string) => {
+        setRoles(prev =>
+            prev.includes(role)
+                ? prev.filter(r => r !== role)
+                : [...prev, role]
+        );
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        const success = await signup(name, email, password);
+        if (roles.length === 0) {
+            setError('Please select at least one role.');
+            return;
+        }
+
+        const success = await signup(name, email, password, roles);
         if (success) {
             router.push('/');
         } else {
@@ -70,6 +84,30 @@ export default function SignupPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <label className="text-sm font-medium text-gray-700">Account Roles</label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <label className={`flex cursor-pointer items-center justify-center rounded-lg border p-4 transition-all ${roles.includes('BUYER') ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}`}>
+                                <input
+                                    type="checkbox"
+                                    className="sr-only"
+                                    checked={roles.includes('BUYER')}
+                                    onChange={() => toggleRole('BUYER')}
+                                />
+                                <span className="text-sm font-semibold">I want to Buy</span>
+                            </label>
+                            <label className={`flex cursor-pointer items-center justify-center rounded-lg border p-4 transition-all ${roles.includes('SELLER') ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}`}>
+                                <input
+                                    type="checkbox"
+                                    className="sr-only"
+                                    checked={roles.includes('SELLER')}
+                                    onChange={() => toggleRole('SELLER')}
+                                />
+                                <span className="text-sm font-semibold">I want to Sell</span>
+                            </label>
                         </div>
                     </div>
 

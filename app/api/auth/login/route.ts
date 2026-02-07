@@ -1,21 +1,31 @@
 import { NextResponse } from 'next/server';
-import { users } from '@/lib/data';
+import prisma from '@/lib/db';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const user = users.find(u => u.email === body.email && u.password === body.password);
+        const { email, password } = body;
 
-        if (user) {
-            const { password: _, ...userWithoutPassword } = user;
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: { roles: true }
+        });
+
+        if (user && user.password === password) {
+            const formattedUser = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                roles: user.roles.map((r: { role: string }) => r.role)
+            };
             return NextResponse.json({
                 success: true,
                 token: `mock-jwt-token-${user.id}`,
-                user: userWithoutPassword
+                user: formattedUser
             });
         }
         return NextResponse.json({ success: false, message: 'Invalid credentials' }, { status: 401 });
-    } catch {
+    } catch (error) {
         return NextResponse.json({ success: false, message: 'Invalid request' }, { status: 400 });
     }
 }

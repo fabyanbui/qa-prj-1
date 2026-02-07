@@ -85,6 +85,13 @@ export function Header() {
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-semibold">{session.user.name}</span>
                                                     <span className="text-xs text-gray-400">{session.user.email}</span>
+                                                    <div className="mt-1 flex gap-1">
+                                                        {session.user.roles?.map(role => (
+                                                            <span key={role} className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-indigo-700">
+                                                                {role}
+                                                            </span>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </button>
                                             <button

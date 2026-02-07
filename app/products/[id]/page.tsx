@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { products } from '@/lib/data';
+import prisma from '@/lib/db';
 import { AddToCartButton } from '@/components/product/AddToCartButton';
 
 interface ProductPageProps {
@@ -10,14 +10,17 @@ interface ProductPageProps {
 }
 
 export async function generateStaticParams() {
-    return products.map((product) => ({
+    const products = await prisma.product.findMany();
+    return products.map((product: any) => ({
         id: product.id,
     }));
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
     const { id } = await params;
-    const product = products.find((p) => p.id === id);
+    const product = await prisma.product.findUnique({
+        where: { id }
+    });
 
     if (!product) {
         notFound();

@@ -10,6 +10,7 @@ export const products: Product[] = [
         category: 'Electronics',
         rating: 4.8,
         stock: 50,
+        sellerId: 'u2',
     },
     {
         id: '2',
@@ -20,6 +21,7 @@ export const products: Product[] = [
         category: 'Accessories',
         rating: 4.5,
         stock: 20,
+        sellerId: 'u2',
     },
     {
         id: '3',
@@ -30,6 +32,7 @@ export const products: Product[] = [
         category: 'Furniture',
         rating: 4.2,
         stock: 15,
+        sellerId: 'u3',
     },
     {
         id: '4',
@@ -40,6 +43,7 @@ export const products: Product[] = [
         category: 'Photography',
         rating: 4.6,
         stock: 30,
+        sellerId: 'u3',
     },
     {
         id: '5',
@@ -50,6 +54,7 @@ export const products: Product[] = [
         category: 'Photography',
         rating: 4.9,
         stock: 5,
+        sellerId: 'u2',
     },
     {
         id: '6',
@@ -60,6 +65,7 @@ export const products: Product[] = [
         category: 'Electronics',
         rating: 4.7,
         stock: 25,
+        sellerId: 'u3',
     },
 ];
 
@@ -68,12 +74,21 @@ export const users = [
         id: 'u1',
         name: 'John Doe',
         email: 'john@example.com',
-        password: 'password123'
+        password: 'password123',
+        roles: ['BUYER']
     },
     {
         id: 'u2',
         name: 'Jane Smith',
         email: 'jane@example.com',
-        password: 'password456'
+        password: 'password456',
+        roles: ['BUYER', 'SELLER']
+    },
+    {
+        id: 'u3',
+        name: 'Bob Wilson',
+        email: 'bob@example.com',
+        password: 'password789',
+        roles: ['SELLER']
     }
 ];

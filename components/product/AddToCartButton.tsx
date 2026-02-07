@@ -1,6 +1,7 @@
 'use client';
 
 import { useCart } from '@/lib/store/cart-context';
+import { useAuth } from '@/lib/store/auth-context';
 import { Product } from '@/types';
 
 interface AddToCartButtonProps {
@@ -10,6 +11,11 @@ interface AddToCartButtonProps {
 
 export function AddToCartButton({ product, className }: AddToCartButtonProps) {
     const { addItem } = useCart();
+    const { activeSession } = useAuth();
+
+    if (!activeSession) {
+        return null;
+    }
 
     return (
         <button

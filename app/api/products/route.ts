@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
-import { products } from '@/lib/data';
+import prisma from '@/lib/db';
 
 export async function GET() {
-    return NextResponse.json(products);
+    try {
+        const products = await prisma.product.findMany();
+        return NextResponse.json(products);
+    } catch (error) {
+        return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    }
 }

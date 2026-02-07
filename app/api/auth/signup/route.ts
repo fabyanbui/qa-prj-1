@@ -1,33 +1,56 @@
 import { NextResponse } from 'next/server';
+import prisma from '@/lib/db';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { email, password, name } = body;
+        const { email, password, name, roles } = body;
 
         if (!email || !password || !name) {
             return NextResponse.json({ success: false, message: 'Missing fields' }, { status: 400 });
         }
 
-        // Mock signup logic
-        // In a real application, you would:
-        // 1. Validate the input (already done above)
-        // 2. Hash the password
-        // 3. Save the user to the database
-        // 4. Generate a JWT token
+        // Check if user exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        });
 
-        const newUser = {
-            id: `u-${Date.now()}`,
-            name,
-            email,
+        if (existingUser) {
+            return NextResponse.json({ success: false, message: 'User already exists' }, { status: 400 });
+        }
+
+        // Create user with roles
+        const user = await prisma.user.create({
+            data: {
+                name,
+                email,
+                password, // Note: In a real app, this should be hashed!
+                roles: {
+                    create: (roles || ['BUYER']).map((role: string) => ({
+                        role: role as any
+                    }))
+                }
+            },
+            include: {
+                roles: true
+            }
+        });
+
+        // Format user for response
+        const formattedUser = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            roles: user.roles.map((r: { role: string }) => r.role)
         };
 
         return NextResponse.json({
             success: true,
-            token: `mock-jwt-token-${newUser.id}`,
-            user: newUser
+            token: `mock-jwt-token-${user.id}`,
+            user: formattedUser
         });
     } catch (error) {
+        console.error('Signup error:', error);
         return NextResponse.json({ success: false, message: 'Invalid request' }, { status: 400 });
     }
 }

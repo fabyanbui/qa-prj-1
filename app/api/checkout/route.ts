@@ -1,20 +1,52 @@
 import { NextResponse } from 'next/server';
+import prisma from '@/lib/db';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
+        const { items, buyerId } = body;
 
-        // Validate request if needed, for mock just proceed
-        // Simulate processing delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        if (!items || !buyerId) {
+            return NextResponse.json({ success: false, message: 'Missing items or buyerId' }, { status: 400 });
+        }
 
-        // Return success
+        // Group items by sellerId
+        const itemsBySeller: Record<string, any[]> = items.reduce((acc: Record<string, any[]>, item: any) => {
+            if (!acc[item.sellerId]) acc[item.sellerId] = [];
+            acc[item.sellerId].push(item);
+            return acc;
+        }, {});
+
+        // Create orders in a transaction
+        const orders = await prisma.$transaction(
+            Object.keys(itemsBySeller).map((sellerId) => {
+                const sellerItems = itemsBySeller[sellerId];
+                const total = sellerItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
+
+                return prisma.order.create({
+                    data: {
+                        buyerId,
+                        sellerId,
+                        total,
+                        items: {
+                            create: sellerItems.map((item: any) => ({
+                                productId: item.id,
+                                quantity: item.quantity,
+                                price: item.price,
+                            })),
+                        },
+                    },
+                });
+            })
+        );
+
         return NextResponse.json({
             success: true,
-            orderId: `ORD-${Math.floor(Math.random() * 10000)}`,
+            orderIds: orders.map((o: any) => o.id),
             message: 'Order placed successfully'
         });
     } catch (error) {
-        return NextResponse.json({ success: false, message: 'Invalid request' }, { status: 400 });
+        console.error('Checkout error:', error);
+        return NextResponse.json({ success: false, message: 'Failed to process order' }, { status: 500 });
     }
 }

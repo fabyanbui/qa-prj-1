@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCart } from '@/lib/store/cart-context';
+import { useAuth } from '@/lib/store/auth-context';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -20,6 +21,7 @@ type CheckoutForm = z.infer<typeof checkoutSchema>;
 
 export default function CheckoutPage() {
     const { items, total, clearCart } = useCart();
+    const { activeSession } = useAuth();
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,17 +34,29 @@ export default function CheckoutPage() {
     });
 
     const onSubmit = async (data: CheckoutForm) => {
+        if (!activeSession) {
+            alert('You must be signed in to place an order');
+            return;
+        }
+
         setIsSubmitting(true);
         try {
-            // Call mock API
-            await fetch('/api/checkout', {
+            // Call API
+            const response = await fetch('/api/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...data, items }),
+                body: JSON.stringify({ ...data, items, buyerId: activeSession.user.id }),
             });
-            clearCart();
-            alert('Order placed successfully!');
-            router.push('/');
+
+            const result = await response.json();
+
+            if (result.success) {
+                clearCart();
+                alert('Order placed successfully!');
+                router.push('/');
+            } else {
+                alert(result.message || 'Failed to place order');
+            }
         } catch (error) {
             console.error(error);
             alert('Failed to place order');
