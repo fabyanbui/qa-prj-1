@@ -41,3 +41,18 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+
+# images
+*.png
+*.jpg
+*.jpeg
+# *.gif
+# *.svg
+# *.webp
+# *.avif
+# *.bmp
+# *.ico
+# *.tif
+# *.tiff
+# *.heic
+# *.heif
