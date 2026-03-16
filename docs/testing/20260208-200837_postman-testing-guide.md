@@ -6,7 +6,7 @@
 1. Open POSTMAN
 2. Click **Import** button (top left)
 3. Select **File** tab
-4. Choose `E-commerce_API_Tests.postman_collection.json` from this directory
+4. Choose `postman/20260208-200837_e-commerce-api-tests.postman_collection.json` from this directory
 5. Click **Import**
 6. Done! All requests are ready to use
 
@@ -219,7 +219,7 @@ pm.test("User has ID", function () {
 
 - **Authentication:** Uses mock JWT tokens (not real JWT)
 - **Security:** Passwords are NOT hashed (demo only)
-- **Database:** Uses Prisma with PostgreSQL
+- **Database:** Uses Prisma with SQLite
 - **Roles:** Users can have multiple roles (BUYER, SELLER, or both)
 
 ---

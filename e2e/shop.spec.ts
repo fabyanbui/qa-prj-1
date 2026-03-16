@@ -1,49 +1,45 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-test.describe('Shopping Flow', () => {
-    test('should allow adding a product to cart and checking out', async ({ page }) => {
-        // 1. Visit home page
-        await page.goto('/');
-        await expect(page.getByRole('heading', { name: /featured products/i })).toBeVisible();
+test.describe('Buyer request flow', () => {
+  test('buyer can create a request and find it in my requests', async ({ page, request }) => {
+    const requestTitle = `Need standing desk ${Date.now()}`;
+    const buyerEmail = `buyer-flow-${Date.now()}@example.com`;
+    const buyerPassword = 'password123';
 
-        // 2. Click on a product link
-        await page.getByRole('link', { name: 'Premium Wireless Headphones' }).click();
-
-        // 3. Verify we are on the details page (h1 is unique here)
-        await expect(page.getByRole('heading', { level: 1, name: 'Premium Wireless Headphones' })).toBeVisible();
-
-        // 4. Add to cart (the one on the detail page)
-        await page.getByRole('button', { name: 'Add to Cart' }).click();
-
-        // 4. Verify cart badge (optional, if we can target it)
-        await expect(page.getByRole('link', { name: /cart/i })).toContainText('1');
-
-        // 5. Go to cart
-        await page.getByRole('link', { name: /cart/i }).click();
-        await expect(page.getByRole('heading', { name: /shopping cart/i })).toBeVisible();
-        await expect(page.getByText('Premium Wireless Headphones')).toBeVisible();
-
-        // 6. Go to checkout
-        await page.getByRole('link', { name: /proceed to checkout/i }).click();
-        await expect(page.getByRole('heading', { name: /checkout/i })).toBeVisible();
-
-        // 7. Fill form
-        await page.fill('input[name="name"]', 'John Doe');
-        await page.fill('input[name="email"]', 'john@example.com');
-        await page.fill('input[name="address"]', '123 Test St');
-        await page.fill('input[name="city"]', 'Test City');
-        await page.fill('input[name="zip"]', '12345');
-        await page.fill('input[name="card"]', '1234567890123456');
-
-        // 8. Submit
-        await page.getByRole('button', { name: /place order/i }).click();
-
-        // 9. Verify success (mock alert or navigation)
-        page.on('dialog', async dialog => {
-            expect(dialog.message()).toContain('Order placed successfully');
-            await dialog.accept();
-        });
-
-        await expect(page).toHaveURL('/');
+    const signupResponse = await request.post('/api/auth/signup', {
+      data: {
+        email: buyerEmail,
+        password: buyerPassword,
+      },
     });
+    expect(signupResponse.ok()).toBeTruthy();
+
+    await page.goto('/login');
+    await page.fill('input[placeholder="Email address"]', buyerEmail);
+    await page.fill('input[placeholder="Password"]', buyerPassword);
+    await page.locator('form button[type="submit"]').click();
+    await expect(page).toHaveURL('/');
+
+    await page.getByRole('link', { name: /create request/i }).first().click();
+    await expect(page).toHaveURL('/requests/new');
+
+    await page.fill('input[placeholder="Need a wooden desk"]', requestTitle);
+    await page.fill(
+      'textarea[placeholder="Dimensions, quality preferences, and other details..."]',
+      'Need one for home office with ergonomic size.',
+    );
+    await page.fill('input[placeholder="Furniture"]', 'Furniture');
+    await page.fill('input[placeholder="180"]', '240');
+    await page.fill('input[placeholder="230"]', '280');
+    await page.fill('input[placeholder="Ho Chi Minh City"]', 'Ho Chi Minh City');
+    await page.fill('input[type="date"]', '2026-04-01');
+    await page.getByRole('button', { name: /create request/i }).click();
+
+    await expect(page).toHaveURL(/\/requests\/.+/);
+    await expect(page.getByRole('heading', { name: requestTitle })).toBeVisible();
+
+    await page.getByRole('link', { name: /my requests/i }).first().click();
+    await expect(page).toHaveURL('/my-requests');
+    await expect(page.getByText(requestTitle)).toBeVisible();
+  });
 });

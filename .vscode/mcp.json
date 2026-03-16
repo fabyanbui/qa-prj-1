@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "playwright": {
+      "command": "/home/fabyanbui/.nvm/versions/node/v24.14.0/bin/node",
+      "args": [
+        "/home/fabyanbui/.nvm/versions/node/v24.14.0/bin/playwright-mcp",
+        "--browser",
+        "chromium",
+        "--headless"
+      ]
+    }
+  }
+}

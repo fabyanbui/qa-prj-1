@@ -1,103 +1,95 @@
-import { test, expect } from '@playwright/test';
-import * as fs from 'fs';
+import { expect, test } from '@playwright/test';
 
-const screenshotDir = 'test-screenshots';
-if (!fs.existsSync(screenshotDir)) {
-    fs.mkdirSync(screenshotDir, { recursive: true });
-}
+test('seller submits offer and buyer accepts to create order', async ({
+  browser,
+  request,
+}) => {
+  const buyerEmail = `buyer-lifecycle-${Date.now()}@example.com`;
+  const sellerEmail = `seller-lifecycle-${Date.now()}@example.com`;
+  const password = 'password123';
+  const requestTitle = `Need office lamp ${Date.now()}`;
 
-test('TC-005 & TC-006: Cart and Checkout', async ({ page }) => {
-    await page.goto('http://localhost:3000/login');
-    await page.fill('input[placeholder="Email address"]', 'john@example.com');
-    await page.fill('input[placeholder="Password"]', 'password123');
-    await page.click('button:has-text("Sign in")');
-    await page.waitForSelector('text=Featured Products');
+  const buyerSignupResponse = await request.post('/api/auth/signup', {
+    data: {
+      email: buyerEmail,
+      password,
+    },
+  });
+  expect(buyerSignupResponse.ok()).toBeTruthy();
+  const buyerSignupPayload = (await buyerSignupResponse.json()) as {
+    success: boolean;
+    user: { id: string };
+  };
+  expect(buyerSignupPayload.success).toBeTruthy();
 
-    // Add to cart
-    await page.click('button:has-text("Add to Cart") >> nth=0');
-    await expect(page.locator('a[href="/cart"]')).toContainText('1');
+  const sellerSignupResponse = await request.post('/api/auth/signup', {
+    data: {
+      email: sellerEmail,
+      password,
+    },
+  });
+  expect(sellerSignupResponse.ok()).toBeTruthy();
+  const sellerSignupPayload = (await sellerSignupResponse.json()) as {
+    success: boolean;
+  };
+  expect(sellerSignupPayload.success).toBeTruthy();
 
-    // Go to cart
-    await page.goto('http://localhost:3000/cart');
-    await page.screenshot({ path: `${screenshotDir}/tc_005_cart.png` });
+  const createRequestResponse = await request.post('/api/requests', {
+    data: {
+      buyerId: buyerSignupPayload.user.id,
+      title: requestTitle,
+      description: 'Looking for warm light desk lamp, delivered within this week.',
+      category: 'Home',
+      budgetMin: 60,
+      budgetMax: 80,
+      location: 'Ho Chi Minh City',
+      deadline: new Date('2026-04-02T12:00:00.000Z').toISOString(),
+    },
+  });
+  expect(createRequestResponse.ok()).toBeTruthy();
 
-    // Remove item
-    await page.click('button:has-text("Remove")');
-    await page.screenshot({ path: `${screenshotDir}/tc_005_cart_empty.png` });
+  const createdRequestPayload = (await createRequestResponse.json()) as {
+    success: boolean;
+    data: { id: string };
+  };
+  expect(createdRequestPayload.success).toBeTruthy();
+  const requestId = createdRequestPayload.data.id;
 
-    // Checkout flow
-    await page.goto('http://localhost:3000/');
-    await page.click('button:has-text("Add to Cart") >> nth=0');
-    await page.goto('http://localhost:3000/cart');
-    await page.click('a:has-text("Proceed to Checkout")');
+  const sellerContext = await browser.newContext();
+  const sellerPage = await sellerContext.newPage();
 
-    await page.fill('input[name="name"]', 'John Doe');
-    await page.fill('input[name="email"]', 'john@example.com');
-    await page.fill('input[name="address"]', '123 Test St');
-    await page.fill('input[name="city"]', 'Test City');
-    await page.fill('input[name="zip"]', '12345');
-    await page.fill('input[name="card"]', '1234567812345678');
+  await sellerPage.goto('/login');
+  await sellerPage.fill('input[placeholder="Email address"]', sellerEmail);
+  await sellerPage.fill('input[placeholder="Password"]', password);
+  await sellerPage.locator('form button[type="submit"]').click();
+  await expect(sellerPage).toHaveURL('/');
 
-    await page.click('button:has-text("Place Order")');
-    await page.waitForTimeout(2000);
-    await page.screenshot({ path: `${screenshotDir}/tc_006_checkout_success.png` });
-});
+  await sellerPage.goto(`/requests/${requestId}`);
+  await sellerPage.fill('input[placeholder="195"]', '65');
+  await sellerPage.fill('input[placeholder="3"]', '2');
+  await sellerPage.fill(
+    'textarea[placeholder="Describe what you can deliver..."]',
+    'Can deliver high quality lamp with one-year warranty.',
+  );
+  await sellerPage.getByRole('button', { name: /submit offer/i }).click();
+  await expect(sellerPage.getByText('PENDING').first()).toBeVisible();
 
-test('TC-007: Seller Dashboard', async ({ page }) => {
-    await page.goto('http://localhost:3000/login');
-    await page.fill('input[placeholder="Email address"]', 'bob@example.com');
-    await page.fill('input[placeholder="Password"]', 'password789');
-    await page.click('button:has-text("Sign in")');
-    await page.waitForSelector('text=Featured Products');
+  const buyerContext = await browser.newContext();
+  const buyerPage = await buyerContext.newPage();
 
-    await page.click('button:has-text("Bob Wilson")');
-    await page.click('text=My Shop (Dashboard)');
-    await page.waitForURL('**/seller');
-    await page.screenshot({ path: `${screenshotDir}/tc_007_seller_dashboard.png` });
-});
+  await buyerPage.goto('/login');
+  await buyerPage.fill('input[placeholder="Email address"]', buyerEmail);
+  await buyerPage.fill('input[placeholder="Password"]', password);
+  await buyerPage.locator('form button[type="submit"]').click();
+  await expect(buyerPage).toHaveURL('/');
 
-test('TC-008: Security - Role Access', async ({ page }) => {
-    await page.goto('http://localhost:3000/login');
-    await page.fill('input[placeholder="Email address"]', 'john@example.com');
-    await page.fill('input[placeholder="Password"]', 'password123');
-    await page.click('button:has-text("Sign in")');
-    await page.waitForSelector('text=Featured Products');
+  await buyerPage.goto(`/requests/${requestId}`);
+  await buyerPage.getByRole('button', { name: /accept offer/i }).first().click();
+  await expect(buyerPage.getByText('CLOSED')).toBeVisible();
 
-    await page.goto('http://localhost:3000/seller');
-    await page.waitForTimeout(2000);
-    await page.screenshot({ path: `${screenshotDir}/tc_008_security.png` });
-});
+  await buyerPage.goto('/orders');
+  await expect(buyerPage.getByText(requestTitle)).toBeVisible();
 
-test('TC-009: Multi-account Switching', async ({ page }) => {
-    await page.goto('http://localhost:3000/login');
-    await page.fill('input[placeholder="Email address"]', 'john@example.com');
-    await page.fill('input[placeholder="Password"]', 'password123');
-    await page.click('button:has-text("Sign in")');
-    await page.waitForSelector('text=Featured Products');
-
-    await page.click('button:has-text("John Doe")');
-    await page.click('text=Add Another Account');
-
-    await page.fill('input[placeholder="Email address"]', 'jane@example.com');
-    await page.fill('input[placeholder="Password"]', 'password456');
-    await page.click('button:has-text("Sign in")');
-    await page.waitForSelector('text=Featured Products');
-
-    await page.screenshot({ path: `${screenshotDir}/tc_009_multi_account.png` });
-});
-
-test('TC-011: SQL Injection Protection', async ({ page }) => {
-    await page.goto('http://localhost:3000/login');
-    await page.fill('input[placeholder="Email address"]', "' OR 1=1 --");
-    await page.fill('input[placeholder="Password"]', "anything");
-    await page.click('button:has-text("Sign in")');
-    await page.waitForTimeout(2000);
-    await expect(page).toHaveURL(/.*login/);
-    await page.screenshot({ path: `${screenshotDir}/tc_011_sqli.png` });
-});
-
-test('TC-012: Mobile Responsive', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.goto('http://localhost:3000/');
-    await page.screenshot({ path: `${screenshotDir}/tc_012_mobile.png` });
+  await sellerContext.close();
+  await buyerContext.close();
 });
