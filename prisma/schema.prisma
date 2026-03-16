@@ -28,6 +28,26 @@ enum Role {
   SELLER
 }
 
+enum RequestStatus {
+  OPEN
+  CLOSED
+  FULFILLED
+  EXPIRED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum DealStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id             String     @id @default(cuid())
   name           String
@@ -37,6 +57,10 @@ model User {
   products       Product[]  @relation("SellerProducts")
   ordersAsBuyer  Order[]    @relation("BuyerOrders")
   ordersAsSeller Order[]    @relation("SellerOrders")
+  requests       Request[]  @relation("BuyerRequests")
+  offers         Offer[]    @relation("SellerOffers")
+  dealsAsBuyer   Deal[]     @relation("BuyerDeals")
+  dealsAsSeller  Deal[]     @relation("SellerDeals")
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 }
@@ -49,16 +73,16 @@ model UserRole {
 }
 
 model Order {
-  id         String      @id @default(cuid())
-  buyer      User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  buyerId    String
-  seller     User        @relation("SellerOrders", fields: [sellerId], references: [id])
-  sellerId   String
-  total      Float
-  status     String      @default("COMPLETED")
-  items      OrderItem[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id        String      @id @default(cuid())
+  buyer     User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  buyerId   String
+  seller    User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  sellerId  String
+  total     Float
+  status    String      @default("COMPLETED")
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 }
 
 model OrderItem {
@@ -69,4 +93,62 @@ model OrderItem {
   productId String
   quantity  Int
   price     Float
+}
+
+model Request {
+  id          String        @id @default(cuid())
+  buyer       User          @relation("BuyerRequests", fields: [buyerId], references: [id])
+  buyerId     String
+  title       String
+  description String
+  category    String
+  budget      Float
+  location    String
+  deadline    DateTime
+  status      RequestStatus @default(OPEN)
+  offers      Offer[]
+  deal        Deal?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([buyerId, status])
+  @@index([category, status])
+  @@index([deadline])
+}
+
+model Offer {
+  id           String      @id @default(cuid())
+  request      Request     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestId    String
+  seller       User        @relation("SellerOffers", fields: [sellerId], references: [id])
+  sellerId     String
+  price        Float
+  deliveryTime String
+  message      String
+  status       OfferStatus @default(PENDING)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deal         Deal?
+
+  @@index([requestId, status])
+  @@index([sellerId, status])
+}
+
+model Deal {
+  id          String     @id @default(cuid())
+  request     Request    @relation(fields: [requestId], references: [id])
+  requestId   String     @unique
+  offer       Offer      @relation(fields: [offerId], references: [id])
+  offerId     String     @unique
+  buyer       User       @relation("BuyerDeals", fields: [buyerId], references: [id])
+  buyerId     String
+  seller      User       @relation("SellerDeals", fields: [sellerId], references: [id])
+  sellerId    String
+  agreedPrice Float
+  status      DealStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
 }

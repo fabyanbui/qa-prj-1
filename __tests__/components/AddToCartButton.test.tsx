@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react'
-import { AddToCartButton } from '@/components/product/AddToCartButton'
-import { CartProvider } from '@/lib/store/cart-context'
-import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react';
+import { AddToCartButton } from '@/components/product/AddToCartButton';
+import { CartProvider } from '@/lib/store/cart-context';
+import { AuthProvider } from '@/lib/store/auth-context';
+import { describe, it, expect } from 'vitest';
 
 const mockProduct = {
     id: '1',
@@ -12,16 +13,19 @@ const mockProduct = {
     category: 'Test Category',
     rating: 5,
     stock: 10
-}
+};
 
 describe('AddToCartButton', () => {
-    it('renders correctly', () => {
-        render(
-            <CartProvider>
-                <AddToCartButton product={mockProduct} />
-            </CartProvider>
-        )
-        const button = screen.getByRole('button', { name: /add to cart/i })
-        expect(button).toBeInTheDocument()
-    })
-})
+  it('does not render when no user is signed in', () => {
+    render(
+      <AuthProvider>
+        <CartProvider>
+          <AddToCartButton product={mockProduct} />
+        </CartProvider>
+      </AuthProvider>,
+    );
+
+    const button = screen.queryByRole('button', { name: /add to cart/i });
+    expect(button).not.toBeInTheDocument();
+  });
+});

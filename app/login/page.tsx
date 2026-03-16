@@ -74,13 +74,13 @@ export default function LoginPage() {
                 </form>
                 <div className="text-center space-y-2">
                     <p className="text-sm text-gray-600">
-                        Don't have an account?{' '}
+                        Don&apos;t have an account?{' '}
                         <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
                             Sign up
                         </Link>
                     </p>
                     <Link href="/" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                        Back to Shop
+                        Back to ReverseMarket
                     </Link>
                 </div>
             </div>

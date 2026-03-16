@@ -17,6 +17,7 @@ interface AuthContextType {
     logout: (email: string) => void;
     switchAccount: (email: string) => void;
     isLoading: boolean;
+    isReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -153,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 logout,
                 switchAccount,
                 isLoading,
+                isReady: isInitialized,
             }}
         >
             {children}

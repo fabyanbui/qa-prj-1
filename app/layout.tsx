@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ShopPy - Premium E-commerce",
-  description: "Advanced e-commerce playground for testing",
+  title: 'ReverseMarket - Reverse Marketplace MVP',
+  description: 'Buyers post requests first, sellers compete with offers',
 };
 
 export default function RootLayout({
