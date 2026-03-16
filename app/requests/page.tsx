@@ -155,13 +155,13 @@ export default function RequestsPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <h2 className="text-xl font-semibold text-gray-900">{item.title}</h2>
                 <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                  Budget ${item.budget.toFixed(2)}
+                  Budget ${item.budgetMin.toFixed(2)} - ${item.budgetMax.toFixed(2)}
                 </span>
               </div>
               <p className="mt-2 text-sm text-gray-600">{item.description}</p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
-                <span className="rounded bg-gray-100 px-2 py-1">{item.category}</span>
-                <span className="rounded bg-gray-100 px-2 py-1">{item.location}</span>
+                {item.category && <span className="rounded bg-gray-100 px-2 py-1">{item.category}</span>}
+                {item.location && <span className="rounded bg-gray-100 px-2 py-1">{item.location}</span>}
                 <span className="rounded bg-gray-100 px-2 py-1">
                   Deadline {new Date(item.deadline).toLocaleDateString()}
                 </span>

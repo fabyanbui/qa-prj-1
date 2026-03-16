@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { assertUserHasRole } from '@/lib/server/reverse-marketplace';
+import { requireActiveAccount } from '@/lib/server/reverse-marketplace';
 
 interface CreateOfferBody {
   requestId?: string;
   sellerId?: string;
   price?: number | string;
-  deliveryTime?: string;
+  estimatedDeliveryDays?: number | string;
   message?: string;
 }
 
@@ -17,11 +17,17 @@ export async function POST(request: NextRequest) {
       requestId,
       sellerId,
       price: priceRaw,
-      deliveryTime,
+      estimatedDeliveryDays: estimatedDeliveryDaysRaw,
       message,
     } = body;
 
-    if (!requestId || !sellerId || priceRaw === undefined || !deliveryTime || !message) {
+    if (
+      !requestId ||
+      !sellerId ||
+      priceRaw === undefined ||
+      estimatedDeliveryDaysRaw === undefined ||
+      !message
+    ) {
       return NextResponse.json(
         { success: false, message: 'Missing required fields' },
         { status: 400 },
@@ -36,11 +42,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const sellerRoleCheck = await assertUserHasRole(sellerId, 'SELLER');
-    if (!sellerRoleCheck.ok) {
+    const estimatedDeliveryDays = Number(estimatedDeliveryDaysRaw);
+    if (!Number.isFinite(estimatedDeliveryDays) || estimatedDeliveryDays <= 0) {
       return NextResponse.json(
-        { success: false, message: sellerRoleCheck.message },
-        { status: sellerRoleCheck.status },
+        { success: false, message: 'estimatedDeliveryDays must be a positive number' },
+        { status: 400 },
+      );
+    }
+
+    const sellerCheck = await requireActiveAccount(sellerId);
+    if (!sellerCheck.ok) {
+      return NextResponse.json(
+        { success: false, message: sellerCheck.message },
+        { status: sellerCheck.status },
       );
     }
 
@@ -86,24 +100,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const createdOffer = await prisma.offer.create({
-      data: {
-        requestId,
-        sellerId,
-        price,
-        deliveryTime: deliveryTime.trim(),
-        message: message.trim(),
-        status: 'PENDING',
-      },
-      include: {
-        seller: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    const createdOffer = await prisma.$transaction(async (tx) => {
+      const offer = await tx.offer.create({
+        data: {
+          requestId,
+          sellerId,
+          price,
+          message: message.trim(),
+          estimatedDeliveryDays: Math.round(estimatedDeliveryDays),
+          status: 'PENDING',
+        },
+        include: {
+          seller: {
+            select: {
+              id: true,
+              email: true,
+              isAdmin: true,
+              status: true,
+              profile: {
+                select: {
+                  displayName: true,
+                  avatarUrl: true,
+                  location: true,
+                },
+              },
+            },
           },
         },
-      },
+      });
+
+      await tx.notification.create({
+        data: {
+          accountId: targetRequest.buyerId,
+          type: 'NEW_OFFER',
+          title: 'New offer received',
+          body: 'A new offer has been submitted to your request.',
+          relatedEntityId: offer.id,
+        },
+      });
+
+      return offer;
     });
 
     return NextResponse.json({ success: true, data: createdOffer }, { status: 201 });

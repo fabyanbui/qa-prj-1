@@ -46,17 +46,13 @@ export function Header() {
             </>
           )}
 
-          {isSeller && (
-            <Link href="/my-offers" className="hover:text-indigo-600">
-              My Offers
-            </Link>
-          )}
+          {isSeller && <Link href="/my-offers" className="hover:text-indigo-600">My Offers</Link>}
 
-          {activeSession && (
-            <Link href="/deals" className="hover:text-indigo-600">
-              Deals
-            </Link>
-          )}
+          {activeSession && <Link href="/orders" className="hover:text-indigo-600">My Orders</Link>}
+          {activeSession && <Link href="/messages" className="hover:text-indigo-600">Messages</Link>}
+          {activeSession && <Link href="/notifications" className="hover:text-indigo-600">Notifications</Link>}
+          {activeSession && <Link href="/profile" className="hover:text-indigo-600">Profile</Link>}
+          {activeSession?.user.isAdmin && <Link href="/admin" className="hover:text-indigo-600">Admin</Link>}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -86,7 +82,7 @@ export function Header() {
                 <UserIcon className="h-5 w-5" />
               </div>
               <span className="max-w-[110px] truncate text-sm font-medium text-gray-700">
-                {activeSession ? activeSession.user.name : 'Account'}
+                {activeSession ? activeSession.user.profile.displayName : 'Account'}
               </span>
               <ChevronDown
                 className={`h-4 w-4 text-gray-400 transition-transform ${
@@ -128,12 +124,14 @@ export function Header() {
                                   ? 'bg-indigo-600 text-white'
                                   : 'bg-gray-200 text-gray-600'
                               }`}
-                            >
-                              {session.user.name.charAt(0)}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-semibold">{session.user.name}</span>
-                              <span className="text-xs text-gray-400">{session.user.email}</span>
+                              >
+                                {session.user.profile.displayName.charAt(0)}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-semibold">
+                                  {session.user.profile.displayName}
+                                </span>
+                                <span className="text-xs text-gray-400">{session.user.email}</span>
                               <div className="mt-1 flex flex-wrap gap-1">
                                 {session.user.roles.map((role) => (
                                   <span

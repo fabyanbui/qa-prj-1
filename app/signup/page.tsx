@@ -6,32 +6,18 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function SignupPage() {
-    const [name, setName] = useState('');
+    const [displayName, setDisplayName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [roles, setRoles] = useState<string[]>(['BUYER']);
     const [error, setError] = useState('');
     const { signup, isLoading } = useAuth();
     const router = useRouter();
-
-    const toggleRole = (role: string) => {
-        setRoles(prev =>
-            prev.includes(role)
-                ? prev.filter(r => r !== role)
-                : [...prev, role]
-        );
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
-        if (roles.length === 0) {
-            setError('Please select at least one role.');
-            return;
-        }
-
-        const success = await signup(name, email, password, roles);
+        const success = await signup(displayName, email, password);
         if (success) {
             router.push('/');
         } else {
@@ -61,8 +47,8 @@ export default function SignupPage() {
                                 required
                                 className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                                 placeholder="Full Name"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                value={displayName}
+                                onChange={(e) => setDisplayName(e.target.value)}
                             />
                         </div>
                         <div>
@@ -87,29 +73,9 @@ export default function SignupPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-3">
-                        <label className="text-sm font-medium text-gray-700">Account Roles</label>
-                        <div className="grid grid-cols-2 gap-4">
-                            <label className={`flex cursor-pointer items-center justify-center rounded-lg border p-4 transition-all ${roles.includes('BUYER') ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}`}>
-                                <input
-                                    type="checkbox"
-                                    className="sr-only"
-                                    checked={roles.includes('BUYER')}
-                                    onChange={() => toggleRole('BUYER')}
-                                />
-                                <span className="text-sm font-semibold">I want to Buy</span>
-                            </label>
-                            <label className={`flex cursor-pointer items-center justify-center rounded-lg border p-4 transition-all ${roles.includes('SELLER') ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}`}>
-                                <input
-                                    type="checkbox"
-                                    className="sr-only"
-                                    checked={roles.includes('SELLER')}
-                                    onChange={() => toggleRole('SELLER')}
-                                />
-                                <span className="text-sm font-semibold">I want to Sell</span>
-                            </label>
-                        </div>
-                    </div>
+                    <p className="rounded-md border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-700">
+                        Every account can act as both buyer and seller by default.
+                    </p>
 
                     <div>
                         <button

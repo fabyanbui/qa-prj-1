@@ -1,11 +1,17 @@
-import { OfferStatus, RequestStatus, Role } from '@prisma/client';
+import {
+  NotificationType,
+  OfferStatus,
+  Prisma,
+  RequestStatus,
+} from '@prisma/client';
 import prisma from '@/lib/db';
+import { Role, User } from '@/types';
 
 export const REQUEST_STATUSES: RequestStatus[] = [
   'OPEN',
   'CLOSED',
-  'FULFILLED',
   'EXPIRED',
+  'CANCELLED',
 ];
 
 export const OFFER_STATUSES: OfferStatus[] = [
@@ -14,6 +20,8 @@ export const OFFER_STATUSES: OfferStatus[] = [
   'REJECTED',
   'WITHDRAWN',
 ];
+
+export const ORDER_STATUSES = ['ACTIVE', 'COMPLETED', 'CANCELLED', 'DISPUTED'] as const;
 
 export function parseOptionalNumber(value: string | null): number | null {
   if (value === null) return null;
@@ -26,29 +34,124 @@ export function parseIsoDate(value: string): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-export function extractDeliveryDays(deliveryTime: string): number {
-  const match = deliveryTime.match(/\d+/);
-  if (!match) return Number.MAX_SAFE_INTEGER;
-  return Number.parseInt(match[0], 10);
+export function toRoles(isAdmin: boolean): Role[] {
+  const roles: Role[] = ['BUYER', 'SELLER'];
+  if (isAdmin) {
+    roles.push('ADMIN');
+  }
+  return roles;
 }
 
-export async function assertUserHasRole(userId: string, role: Role) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: { roles: true },
+export const userPreviewSelect = {
+  id: true,
+  email: true,
+  isAdmin: true,
+  status: true,
+  profile: {
+    select: {
+      displayName: true,
+      avatarUrl: true,
+      location: true,
+    },
+  },
+} satisfies Prisma.AccountSelect;
+
+type SessionAccount = Prisma.AccountGetPayload<{
+  include: { profile: true };
+}>;
+
+export function toSessionUser(account: SessionAccount): User {
+  const profile = account.profile ?? {
+    id: `profile-${account.id}`,
+    accountId: account.id,
+    displayName: account.email,
+    avatarUrl: null,
+    bio: null,
+    phoneNumber: null,
+    location: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  return {
+    id: account.id,
+    email: account.email,
+    status: account.status,
+    isAdmin: account.isAdmin,
+    roles: toRoles(account.isAdmin),
+    profile: {
+      id: profile.id,
+      accountId: account.id,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+      bio: profile.bio,
+      phoneNumber: profile.phoneNumber,
+      location: profile.location,
+      createdAt: profile.createdAt.toISOString(),
+      updatedAt: profile.updatedAt.toISOString(),
+    },
+  };
+}
+
+export async function requireActiveAccount(accountId: string) {
+  const account = await prisma.account.findUnique({
+    where: { id: accountId },
+    include: { profile: true },
   });
 
-  if (!user) {
-    return { ok: false as const, status: 404, message: 'User not found' };
+  if (!account || !account.profile) {
+    return { ok: false as const, status: 404, message: 'Account not found' };
   }
 
-  if (!user.roles.some((userRole) => userRole.role === role)) {
+  if (account.status === 'SUSPENDED') {
     return {
       ok: false as const,
       status: 403,
-      message: `User does not have required role: ${role}`,
+      message: 'Account is suspended',
     };
   }
 
-  return { ok: true as const, user };
+  return { ok: true as const, account };
+}
+
+export async function requireAdminAccount(accountId: string) {
+  const accountResult = await requireActiveAccount(accountId);
+  if (!accountResult.ok) {
+    return accountResult;
+  }
+
+  if (!accountResult.account.isAdmin) {
+    return {
+      ok: false as const,
+      status: 403,
+      message: 'Admin access is required',
+    };
+  }
+
+  return accountResult;
+}
+
+export async function createNotification(
+  accountId: string,
+  type: NotificationType,
+  title: string,
+  body: string,
+  relatedEntityId?: string,
+) {
+  await prisma.notification.create({
+    data: {
+      accountId,
+      type,
+      title,
+      body,
+      relatedEntityId,
+    },
+  });
+}
+
+export function displayBudgetLabel(budgetMin: number, budgetMax: number) {
+  if (budgetMin === budgetMax) {
+    return `$${budgetMin.toFixed(2)}`;
+  }
+  return `$${budgetMin.toFixed(2)} - $${budgetMax.toFixed(2)}`;
 }

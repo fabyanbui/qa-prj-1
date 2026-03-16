@@ -14,13 +14,48 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
-export type Role = 'BUYER' | 'SELLER';
+export type Role = 'BUYER' | 'SELLER' | 'ADMIN';
+export type AccountStatus = 'ACTIVE' | 'SUSPENDED';
+export type RequestStatus = 'OPEN' | 'CLOSED' | 'EXPIRED' | 'CANCELLED';
+export type OfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+export type OrderStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'DISPUTED';
+export type NotificationType =
+  | 'NEW_OFFER'
+  | 'OFFER_ACCEPTED'
+  | 'NEW_MESSAGE'
+  | 'ORDER_COMPLETED';
+
+export interface Profile {
+  id: string;
+  accountId: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  phoneNumber?: string | null;
+  location?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface User {
   id: string;
-  name: string;
   email: string;
+  status: AccountStatus;
+  isAdmin: boolean;
   roles: Role[];
+  profile: Profile;
+}
+
+export interface UserPreview {
+  id: string;
+  email: string;
+  roles?: Role[];
+  profile: Pick<Profile, 'displayName' | 'avatarUrl' | 'location'>;
+}
+
+export interface Reputation {
+  avgRating: number;
+  totalReviews: number;
 }
 
 export interface AuthSession {
@@ -28,30 +63,27 @@ export interface AuthSession {
   token: string;
 }
 
-export type RequestStatus = 'OPEN' | 'CLOSED' | 'FULFILLED' | 'EXPIRED';
-export type OfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
-export type DealStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-
 export interface MarketplaceRequest {
   id: string;
   buyerId: string;
   title: string;
   description: string;
-  category: string;
-  budget: number;
-  location: string;
+  category?: string | null;
+  location?: string | null;
+  budgetMin: number;
+  budgetMax: number;
   deadline: string;
   status: RequestStatus;
   createdAt: string;
   updatedAt: string;
-  buyer?: Pick<User, 'id' | 'name' | 'email'>;
+  buyer?: UserPreview;
   _count?: {
     offers: number;
   };
-  deal?: {
+  order?: {
     id: string;
-    status: DealStatus;
-    agreedPrice: number;
+    status: OrderStatus;
+    finalPrice: number;
   } | null;
 }
 
@@ -60,52 +92,89 @@ export interface MarketplaceOffer {
   requestId: string;
   sellerId: string;
   price: number;
-  deliveryTime: string;
   message: string;
+  estimatedDeliveryDays: number;
   status: OfferStatus;
   createdAt: string;
   updatedAt: string;
-  seller?: Pick<User, 'id' | 'name' | 'email'>;
+  seller?: UserPreview;
   request?: {
     id: string;
     title: string;
-    category: string;
-    budget: number;
-    location: string;
+    category?: string | null;
+    location?: string | null;
+    budgetMin: number;
+    budgetMax: number;
     deadline: string;
     status: RequestStatus;
-    buyer: Pick<User, 'id' | 'name' | 'email'>;
+    buyer: UserPreview;
   };
-  deal?: {
+  order?: {
     id: string;
-    status: DealStatus;
-    agreedPrice: number;
+    status: OrderStatus;
+    finalPrice: number;
   } | null;
 }
 
-export interface MarketplaceDeal {
+export interface MarketplaceOrder {
   id: string;
   requestId: string;
   offerId: string;
   buyerId: string;
   sellerId: string;
-  agreedPrice: number;
-  status: DealStatus;
+  finalPrice: number;
+  status: OrderStatus;
   createdAt: string;
-  updatedAt: string;
-  buyer: Pick<User, 'id' | 'name' | 'email'>;
-  seller: Pick<User, 'id' | 'name' | 'email'>;
+  completedAt?: string | null;
+  buyer: UserPreview;
+  seller: UserPreview;
   request: {
     id: string;
     title: string;
-    category: string;
-    location: string;
+    category?: string | null;
+    location?: string | null;
     deadline: string;
     status: RequestStatus;
   };
   offer: {
     id: string;
-    deliveryTime: string;
     message: string;
+    estimatedDeliveryDays: number;
   };
+  reviews?: MarketplaceReview[];
+}
+
+export interface MarketplaceMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  requestId?: string | null;
+  offerId?: string | null;
+  content: string;
+  createdAt: string;
+  sender: UserPreview;
+  receiver: UserPreview;
+}
+
+export interface MarketplaceReview {
+  id: string;
+  orderId: string;
+  reviewerId: string;
+  revieweeId: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  reviewer: UserPreview;
+  reviewee: UserPreview;
+}
+
+export interface MarketplaceNotification {
+  id: string;
+  accountId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  relatedEntityId?: string | null;
+  read: boolean;
+  createdAt: string;
 }

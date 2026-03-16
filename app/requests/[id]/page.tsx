@@ -4,15 +4,19 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/store/auth-context';
-import { MarketplaceOffer, MarketplaceRequest } from '@/types';
+import { MarketplaceMessage, MarketplaceOffer, MarketplaceRequest } from '@/types';
 
 type OfferSort = 'newest' | 'lowest-price' | 'fastest-delivery';
 
 interface RequestDetail extends MarketplaceRequest {
   buyer: {
     id: string;
-    name: string;
     email: string;
+    profile: {
+      displayName: string;
+      avatarUrl?: string | null;
+      location?: string | null;
+    };
   };
 }
 
@@ -25,15 +29,19 @@ export default function RequestDetailPage() {
   const [requestData, setRequestData] = useState<RequestDetail | null>(null);
   const [offers, setOffers] = useState<MarketplaceOffer[]>([]);
   const [offerSort, setOfferSort] = useState<OfferSort>('newest');
+  const [messages, setMessages] = useState<MarketplaceMessage[]>([]);
+  const [receiverId, setReceiverId] = useState('');
+  const [messageText, setMessageText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isMessageLoading, setIsMessageLoading] = useState(false);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
   const [isAcceptingOfferId, setIsAcceptingOfferId] = useState<string | null>(null);
 
   const [price, setPrice] = useState('');
-  const [deliveryTime, setDeliveryTime] = useState('');
-  const [message, setMessage] = useState('');
+  const [estimatedDeliveryDays, setEstimatedDeliveryDays] = useState('');
+  const [offerMessage, setOfferMessage] = useState('');
 
   useEffect(() => {
     if (!isReady) {
@@ -97,9 +105,70 @@ export default function RequestDetailPage() {
 
   const canSubmitOffer = useMemo(() => {
     if (!activeSession || !requestData) return false;
-    const isSeller = activeSession.user.roles.includes('SELLER');
-    return isSeller && requestData.status === 'OPEN' && requestData.buyerId !== activeSession.user.id;
+    return requestData.status === 'OPEN' && requestData.buyerId !== activeSession.user.id;
   }, [activeSession, requestData]);
+
+  const availableReceivers = useMemo(() => {
+    if (!activeSession || !requestData) return [];
+
+    if (isBuyerOwner) {
+      const unique = new Map<string, string>();
+      offers.forEach((offer) => {
+        if (offer.seller) {
+          unique.set(offer.sellerId, offer.seller.profile.displayName);
+        }
+      });
+      return Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
+    }
+
+    return [
+      {
+        id: requestData.buyerId,
+        name: requestData.buyer.profile.displayName,
+      },
+    ];
+  }, [activeSession, isBuyerOwner, offers, requestData]);
+
+  useEffect(() => {
+    if (!receiverId && availableReceivers.length > 0) {
+      setReceiverId(availableReceivers[0].id);
+    }
+  }, [availableReceivers, receiverId]);
+
+  const loadMessages = useCallback(async () => {
+    if (!activeSession || !receiverId) return;
+
+    setIsMessageLoading(true);
+    try {
+      const params = new URLSearchParams({
+        accountId: activeSession.user.id,
+        withUserId: receiverId,
+        requestId,
+      });
+      const response = await fetch(`/api/messages?${params.toString()}`);
+      const payload = (await response.json()) as {
+        success: boolean;
+        message?: string;
+        data?: MarketplaceMessage[];
+      };
+
+      if (!response.ok || !payload.success || !payload.data) {
+        setActionError(payload.message ?? 'Failed to load messages');
+        return;
+      }
+
+      setMessages(payload.data);
+    } catch (messageError) {
+      console.error('Failed to load messages', messageError);
+      setActionError('Failed to load messages');
+    } finally {
+      setIsMessageLoading(false);
+    }
+  }, [activeSession, receiverId, requestId]);
+
+  useEffect(() => {
+    void loadMessages();
+  }, [loadMessages]);
 
   const submitOffer = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -115,8 +184,8 @@ export default function RequestDetailPage() {
           requestId: requestData.id,
           sellerId: activeSession.user.id,
           price,
-          deliveryTime,
-          message,
+          estimatedDeliveryDays,
+          message: offerMessage,
         }),
       });
 
@@ -131,8 +200,8 @@ export default function RequestDetailPage() {
       }
 
       setPrice('');
-      setDeliveryTime('');
-      setMessage('');
+      setEstimatedDeliveryDays('');
+      setOfferMessage('');
       await loadRequest();
     } catch (submitError) {
       console.error('Failed to submit offer', submitError);
@@ -151,7 +220,7 @@ export default function RequestDetailPage() {
       const response = await fetch(`/api/offers/${offerId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buyerId: activeSession.user.id }),
+        body: JSON.stringify({ accountId: activeSession.user.id }),
       });
 
       const payload = (await response.json()) as {
@@ -170,6 +239,38 @@ export default function RequestDetailPage() {
       setActionError('Failed to accept offer');
     } finally {
       setIsAcceptingOfferId(null);
+    }
+  };
+
+  const sendMessage = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!activeSession || !receiverId || !messageText.trim()) return;
+
+    setActionError('');
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderId: activeSession.user.id,
+          receiverId,
+          requestId,
+          content: messageText.trim(),
+        }),
+      });
+      const payload = (await response.json()) as {
+        success: boolean;
+        message?: string;
+      };
+      if (!response.ok || !payload.success) {
+        setActionError(payload.message ?? 'Failed to send message');
+        return;
+      }
+      setMessageText('');
+      await loadMessages();
+    } catch (messageError) {
+      console.error('Failed to send message', messageError);
+      setActionError('Failed to send message');
     }
   };
 
@@ -206,14 +307,24 @@ export default function RequestDetailPage() {
         <p className="mt-3 text-sm text-gray-600">{requestData.description}</p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-500">
           <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">
-            Budget ${requestData.budget.toFixed(2)}
+            Budget ${requestData.budgetMin.toFixed(2)} - ${requestData.budgetMax.toFixed(2)}
           </span>
-          <span className="rounded bg-gray-100 px-2 py-1">{requestData.category}</span>
-          <span className="rounded bg-gray-100 px-2 py-1">{requestData.location}</span>
+          {requestData.category && <span className="rounded bg-gray-100 px-2 py-1">{requestData.category}</span>}
+          {requestData.location && <span className="rounded bg-gray-100 px-2 py-1">{requestData.location}</span>}
           <span className="rounded bg-gray-100 px-2 py-1">
             Deadline {new Date(requestData.deadline).toLocaleDateString()}
           </span>
-          <span className="rounded bg-gray-100 px-2 py-1">Buyer {requestData.buyer.name}</span>
+          <span className="rounded bg-gray-100 px-2 py-1">
+            Buyer {requestData.buyer.profile.displayName}
+          </span>
+          {requestData.order && (
+            <Link
+              href={`/orders/${requestData.order.id}`}
+              className="rounded bg-emerald-100 px-2 py-1 font-semibold text-emerald-700"
+            >
+              View order
+            </Link>
+          )}
         </div>
       </div>
 
@@ -236,13 +347,13 @@ export default function RequestDetailPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Delivery time</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Delivery days</label>
               <input
                 required
-                value={deliveryTime}
-                onChange={(event) => setDeliveryTime(event.target.value)}
+                value={estimatedDeliveryDays}
+                onChange={(event) => setEstimatedDeliveryDays(event.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2"
-                placeholder="3 days"
+                placeholder="3"
               />
             </div>
           </div>
@@ -250,8 +361,8 @@ export default function RequestDetailPage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">Message</label>
             <textarea
               required
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
+              value={offerMessage}
+              onChange={(event) => setOfferMessage(event.target.value)}
               rows={3}
               className="w-full rounded-md border border-gray-300 px-3 py-2"
               placeholder="Describe what you can deliver..."
@@ -292,14 +403,11 @@ export default function RequestDetailPage() {
         ) : (
           <div className="space-y-3">
             {offers.map((offer) => (
-              <div
-                key={offer.id}
-                className="rounded-lg border border-gray-200 bg-gray-50 p-4"
-              >
+              <div key={offer.id} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-gray-900">
-                      {offer.seller?.name ?? 'Unknown seller'}
+                      {offer.seller?.profile.displayName ?? 'Unknown seller'}
                     </p>
                     <p className="mt-1 text-xs text-gray-500">
                       {offer.seller?.email ?? 'No email'}
@@ -314,7 +422,9 @@ export default function RequestDetailPage() {
                   <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">
                     ${offer.price.toFixed(2)}
                   </span>
-                  <span className="rounded bg-white px-2 py-1">{offer.deliveryTime}</span>
+                  <span className="rounded bg-white px-2 py-1">
+                    {offer.estimatedDeliveryDays} day(s)
+                  </span>
                   <span className="rounded bg-white px-2 py-1">
                     {new Date(offer.createdAt).toLocaleString()}
                   </span>
@@ -336,6 +446,71 @@ export default function RequestDetailPage() {
           </div>
         )}
       </div>
+
+      {availableReceivers.length > 0 && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-bold text-gray-900">Messages</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Chat with buyers/sellers about this request.
+          </p>
+
+          <div className="mt-3">
+            <label className="mb-1 block text-xs font-medium text-gray-600">Conversation</label>
+            <select
+              value={receiverId}
+              onChange={(event) => setReceiverId(event.target.value)}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+              {availableReceivers.map((receiver) => (
+                <option key={receiver.id} value={receiver.id}>
+                  {receiver.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mt-4 max-h-72 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
+            {isMessageLoading ? (
+              <p className="text-sm text-gray-500">Loading messages...</p>
+            ) : messages.length === 0 ? (
+              <p className="text-sm text-gray-500">No messages in this conversation yet.</p>
+            ) : (
+              messages.map((message) => {
+                const isOwn = message.senderId === activeSession.user.id;
+                return (
+                  <div
+                    key={message.id}
+                    className={`rounded-md p-2 text-sm ${
+                      isOwn ? 'ml-10 bg-indigo-100 text-indigo-900' : 'mr-10 bg-white text-gray-800'
+                    }`}
+                  >
+                    <p className="text-xs font-semibold">
+                      {message.sender.profile.displayName} ·{' '}
+                      {new Date(message.createdAt).toLocaleString()}
+                    </p>
+                    <p className="mt-1">{message.content}</p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <form onSubmit={sendMessage} className="mt-3 flex gap-2">
+            <input
+              value={messageText}
+              onChange={(event) => setMessageText(event.target.value)}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+              placeholder="Write a message..."
+            />
+            <button
+              type="submit"
+              className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

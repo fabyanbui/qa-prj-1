@@ -2,13 +2,15 @@ import { OfferStatus } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import {
-  assertUserHasRole,
   OFFER_STATUSES,
+  requireActiveAccount,
 } from '@/lib/server/reverse-marketplace';
 
 export async function GET(request: NextRequest) {
   try {
-    const sellerId = request.nextUrl.searchParams.get('sellerId');
+    const sellerId =
+      request.nextUrl.searchParams.get('accountId') ??
+      request.nextUrl.searchParams.get('sellerId');
     const statusParam = request.nextUrl.searchParams.get('status');
 
     if (!sellerId) {
@@ -28,11 +30,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const sellerRoleCheck = await assertUserHasRole(sellerId, 'SELLER');
-    if (!sellerRoleCheck.ok) {
+    const sellerCheck = await requireActiveAccount(sellerId);
+    if (!sellerCheck.ok) {
       return NextResponse.json(
-        { success: false, message: sellerRoleCheck.message },
-        { status: sellerRoleCheck.status },
+        { success: false, message: sellerCheck.message },
+        { status: sellerCheck.status },
       );
     }
 
@@ -47,24 +49,33 @@ export async function GET(request: NextRequest) {
             id: true,
             title: true,
             category: true,
-            budget: true,
+            budgetMin: true,
+            budgetMax: true,
             location: true,
             deadline: true,
             status: true,
             buyer: {
               select: {
                 id: true,
-                name: true,
                 email: true,
+                isAdmin: true,
+                status: true,
+                profile: {
+                  select: {
+                    displayName: true,
+                    avatarUrl: true,
+                    location: true,
+                  },
+                },
               },
             },
           },
         },
-        deal: {
+        order: {
           select: {
             id: true,
             status: true,
-            agreedPrice: true,
+            finalPrice: true,
           },
         },
       },

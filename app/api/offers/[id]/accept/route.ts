@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { assertUserHasRole } from '@/lib/server/reverse-marketplace';
+import { requireActiveAccount } from '@/lib/server/reverse-marketplace';
 
 interface AcceptOfferBody {
-  buyerId?: string;
+  accountId?: string;
 }
 
 interface RouteContext {
@@ -14,20 +14,20 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     const { id } = await params;
     const body = (await request.json()) as AcceptOfferBody;
-    const { buyerId } = body;
+    const { accountId } = body;
 
-    if (!buyerId) {
+    if (!accountId) {
       return NextResponse.json(
-        { success: false, message: 'buyerId is required' },
+        { success: false, message: 'accountId is required' },
         { status: 400 },
       );
     }
 
-    const buyerRoleCheck = await assertUserHasRole(buyerId, 'BUYER');
-    if (!buyerRoleCheck.ok) {
+    const buyerCheck = await requireActiveAccount(accountId);
+    if (!buyerCheck.ok) {
       return NextResponse.json(
-        { success: false, message: buyerRoleCheck.message },
-        { status: buyerRoleCheck.status },
+        { success: false, message: buyerCheck.message },
+        { status: buyerCheck.status },
       );
     }
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    if (offer.request.buyerId !== buyerId) {
+    if (offer.request.buyerId !== accountId) {
       return NextResponse.json(
         { success: false, message: 'Only the request owner can accept this offer' },
         { status: 403 },
@@ -89,34 +89,45 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
       await tx.request.update({
         where: { id: offer.requestId },
-        data: { status: 'FULFILLED' },
+        data: { status: 'CLOSED' },
       });
 
-      const deal = await tx.deal.upsert({
+      const order = await tx.order.upsert({
         where: { requestId: offer.requestId },
         update: {
           offerId: offer.id,
-          buyerId,
+          buyerId: accountId,
           sellerId: offer.sellerId,
-          agreedPrice: offer.price,
+          finalPrice: offer.price,
           status: 'ACTIVE',
+          completedAt: null,
         },
         create: {
           requestId: offer.requestId,
           offerId: offer.id,
-          buyerId,
+          buyerId: accountId,
           sellerId: offer.sellerId,
-          agreedPrice: offer.price,
+          finalPrice: offer.price,
           status: 'ACTIVE',
         },
       });
 
-      return { acceptedOffer, deal };
+      await tx.notification.create({
+        data: {
+          accountId: offer.sellerId,
+          type: 'OFFER_ACCEPTED',
+          title: 'Offer accepted',
+          body: 'Your offer has been accepted and an order was created.',
+          relatedEntityId: order.id,
+        },
+      });
+
+      return { acceptedOffer, order };
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Offer accepted and deal created',
+      message: 'Offer accepted and order created',
       data: result,
     });
   } catch (error) {

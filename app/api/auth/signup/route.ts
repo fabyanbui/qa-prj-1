@@ -1,75 +1,58 @@
 import { NextResponse } from 'next/server';
-import { Role } from '@prisma/client';
 import prisma from '@/lib/db';
+import { hashPassword } from '@/lib/server/auth';
+import { toSessionUser } from '@/lib/server/reverse-marketplace';
 
 interface SignupBody {
   email?: string;
   password?: string;
-  name?: string;
-  roles?: string[];
-}
-
-function toValidRoles(roles: string[] | undefined): Role[] {
-  if (!roles || roles.length === 0) {
-    return ['BUYER'];
-  }
-
-  const filteredRoles = roles.filter(
-    (role): role is Role => role === 'BUYER' || role === 'SELLER',
-  );
-  return filteredRoles.length > 0 ? filteredRoles : ['BUYER'];
+  displayName?: string;
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as SignupBody;
-    const { email, password, name, roles } = body;
+    const { email, password, displayName } = body;
 
-    if (!email || !password || !name) {
+    if (!email || !password || !displayName) {
       return NextResponse.json(
         { success: false, message: 'Missing required fields' },
         { status: 400 },
       );
     }
 
-    const existingUser = await prisma.user.findUnique({
+    const existingAccount = await prisma.account.findUnique({
       where: { email },
     });
 
-    if (existingUser) {
+    if (existingAccount) {
       return NextResponse.json(
-        { success: false, message: 'User already exists' },
+        { success: false, message: 'Account already exists' },
         { status: 400 },
       );
     }
 
-    const normalizedRoles = toValidRoles(roles);
-
-    const user = await prisma.user.create({
+    const account = await prisma.account.create({
       data: {
-        name,
         email,
-        password,
-        roles: {
-          create: normalizedRoles.map((role) => ({ role })),
+        passwordHash: hashPassword(password),
+        profile: {
+          create: {
+            displayName: displayName.trim(),
+          },
         },
       },
       include: {
-        roles: true,
+        profile: true,
       },
     });
 
-    const formattedUser = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      roles: user.roles.map((role) => role.role),
-    };
+    const user = toSessionUser(account);
 
     return NextResponse.json({
       success: true,
-      token: `mock-jwt-token-${user.id}`,
-      user: formattedUser,
+      token: `mock-jwt-token-${account.id}`,
+      user,
     });
   } catch (error) {
     console.error('Signup error:', error);

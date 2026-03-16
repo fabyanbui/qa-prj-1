@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
+import { verifyPassword } from '@/lib/server/auth';
+import { toSessionUser } from '@/lib/server/reverse-marketplace';
 
 interface LoginBody {
   email?: string;
@@ -18,28 +20,30 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
+    const account = await prisma.account.findUnique({
       where: { email },
-      include: { roles: true },
+      include: { profile: true },
     });
 
-    if (user && user.password === password) {
-      const formattedUser = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        roles: user.roles.map((role) => role.role),
-      };
-      return NextResponse.json({
-        success: true,
-        token: `mock-jwt-token-${user.id}`,
-        user: formattedUser,
-      });
+    if (!account || !account.profile || !verifyPassword(password, account.passwordHash)) {
+      return NextResponse.json(
+        { success: false, message: 'Invalid credentials' },
+        { status: 401 },
+      );
     }
-    return NextResponse.json(
-      { success: false, message: 'Invalid credentials' },
-      { status: 401 },
-    );
+
+    if (account.status === 'SUSPENDED') {
+      return NextResponse.json(
+        { success: false, message: 'Account is suspended' },
+        { status: 403 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      token: `mock-jwt-token-${account.id}`,
+      user: toSessionUser(account),
+    });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

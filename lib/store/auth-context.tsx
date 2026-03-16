@@ -7,13 +7,13 @@ import {
     useState,
     ReactNode,
 } from 'react';
-import { AuthSession } from '@/types';
+import { AuthSession, User } from '@/types';
 
 interface AuthContextType {
     sessions: AuthSession[];
     activeSession: AuthSession | null;
     login: (email: string, password: string) => Promise<boolean>;
-    signup: (name: string, email: string, password: string, roles: string[]) => Promise<boolean>;
+    signup: (displayName: string, email: string, password: string) => Promise<boolean>;
     logout: (email: string) => void;
     switchAccount: (email: string) => void;
     isLoading: boolean;
@@ -28,6 +28,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isInitialized, setIsInitialized] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
+    const toSessionUser = (rawUser: User): User => {
+        const roles = rawUser.roles ?? ['BUYER', 'SELLER'];
+        return {
+            ...rawUser,
+            roles,
+            profile: {
+                ...rawUser.profile,
+                id: rawUser.profile?.id ?? `profile-${rawUser.id}`,
+                accountId: rawUser.profile?.accountId ?? rawUser.id,
+                displayName: rawUser.profile?.displayName ?? rawUser.email,
+                avatarUrl: rawUser.profile?.avatarUrl ?? null,
+                bio: rawUser.profile?.bio ?? null,
+                phoneNumber: rawUser.profile?.phoneNumber ?? null,
+                location: rawUser.profile?.location ?? null,
+                createdAt: rawUser.profile?.createdAt ?? new Date().toISOString(),
+                updatedAt: rawUser.profile?.updatedAt ?? new Date().toISOString(),
+            },
+        };
+    };
+
     // Initial load
     useEffect(() => {
         const savedSessions = localStorage.getItem('auth_sessions');
@@ -36,10 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (savedSessions) {
             try {
                 const parsedSessions: AuthSession[] = JSON.parse(savedSessions);
-                setSessions(parsedSessions);
+                const normalizedSessions = parsedSessions.map((session) => ({
+                    ...session,
+                    user: toSessionUser(session.user),
+                }));
+                setSessions(normalizedSessions);
 
                 if (savedActive) {
-                    const active = parsedSessions.find(s => s.user.email === savedActive);
+                    const active = normalizedSessions.find(s => s.user.email === savedActive);
                     if (active) setActiveSession(active);
                 }
             } catch (e) {
@@ -74,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (data.success) {
                 const newSession: AuthSession = {
-                    user: data.user,
+                    user: toSessionUser(data.user),
                     token: data.token,
                 };
 
@@ -94,20 +118,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const signup = async (name: string, email: string, password: string, roles: string[]) => {
+    const signup = async (displayName: string, email: string, password: string) => {
         setIsLoading(true);
         try {
             const response = await fetch('/api/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password, roles }),
+                body: JSON.stringify({ displayName, email, password }),
             });
 
             const data = await response.json();
 
             if (data.success) {
                 const newSession: AuthSession = {
-                    user: data.user,
+                    user: toSessionUser(data.user),
                     token: data.token,
                 };
 

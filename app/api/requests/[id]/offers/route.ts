@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { extractDeliveryDays } from '@/lib/server/reverse-marketplace';
 
 type OfferSort = 'lowest-price' | 'fastest-delivery' | 'newest';
 
@@ -38,8 +37,16 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         seller: {
           select: {
             id: true,
-            name: true,
             email: true,
+            isAdmin: true,
+            status: true,
+            profile: {
+              select: {
+                displayName: true,
+                avatarUrl: true,
+                location: true,
+              },
+            },
           },
         },
       },
@@ -51,7 +58,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       sortedOffers.sort((a, b) => a.price - b.price || b.createdAt.getTime() - a.createdAt.getTime());
     } else if (sort === 'fastest-delivery') {
       sortedOffers.sort((a, b) => {
-        const dayDiff = extractDeliveryDays(a.deliveryTime) - extractDeliveryDays(b.deliveryTime);
+        const dayDiff = a.estimatedDeliveryDays - b.estimatedDeliveryDays;
         if (dayDiff !== 0) return dayDiff;
         return b.createdAt.getTime() - a.createdAt.getTime();
       });

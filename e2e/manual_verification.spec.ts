@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('seller submits offer and buyer accepts to create deal', async ({
+test('seller submits offer and buyer accepts to create order', async ({
   browser,
   request,
 }) => {
@@ -11,10 +11,9 @@ test('seller submits offer and buyer accepts to create deal', async ({
 
   const buyerSignupResponse = await request.post('/api/auth/signup', {
     data: {
-      name: 'Lifecycle Buyer',
+      displayName: 'Lifecycle Buyer',
       email: buyerEmail,
       password,
-      roles: ['BUYER'],
     },
   });
   expect(buyerSignupResponse.ok()).toBeTruthy();
@@ -26,10 +25,9 @@ test('seller submits offer and buyer accepts to create deal', async ({
 
   const sellerSignupResponse = await request.post('/api/auth/signup', {
     data: {
-      name: 'Lifecycle Seller',
+      displayName: 'Lifecycle Seller',
       email: sellerEmail,
       password,
-      roles: ['SELLER'],
     },
   });
   expect(sellerSignupResponse.ok()).toBeTruthy();
@@ -44,7 +42,8 @@ test('seller submits offer and buyer accepts to create deal', async ({
       title: requestTitle,
       description: 'Looking for warm light desk lamp, delivered within this week.',
       category: 'Home',
-      budget: 70,
+      budgetMin: 60,
+      budgetMax: 80,
       location: 'Ho Chi Minh City',
       deadline: new Date('2026-04-02T12:00:00.000Z').toISOString(),
     },
@@ -69,7 +68,7 @@ test('seller submits offer and buyer accepts to create deal', async ({
 
   await sellerPage.goto(`/requests/${requestId}`);
   await sellerPage.fill('input[placeholder="195"]', '65');
-  await sellerPage.fill('input[placeholder="3 days"]', '2 days');
+  await sellerPage.fill('input[placeholder="3"]', '2');
   await sellerPage.fill(
     'textarea[placeholder="Describe what you can deliver..."]',
     'Can deliver high quality lamp with one-year warranty.',
@@ -88,9 +87,9 @@ test('seller submits offer and buyer accepts to create deal', async ({
 
   await buyerPage.goto(`/requests/${requestId}`);
   await buyerPage.getByRole('button', { name: /accept offer/i }).first().click();
-  await expect(buyerPage.getByText('FULFILLED')).toBeVisible();
+  await expect(buyerPage.getByText('CLOSED')).toBeVisible();
 
-  await buyerPage.goto('/deals');
+  await buyerPage.goto('/orders');
   await expect(buyerPage.getByText(requestTitle)).toBeVisible();
 
   await sellerContext.close();

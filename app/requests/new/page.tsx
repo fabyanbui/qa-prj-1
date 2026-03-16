@@ -11,7 +11,8 @@ export default function NewRequestPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
-  const [budget, setBudget] = useState('');
+  const [budgetMin, setBudgetMin] = useState('');
+  const [budgetMax, setBudgetMax] = useState('');
   const [location, setLocation] = useState('');
   const [deadline, setDeadline] = useState('');
   const [error, setError] = useState('');
@@ -48,7 +49,8 @@ export default function NewRequestPage() {
           title,
           description,
           category,
-          budget,
+          budgetMin,
+          budgetMax,
           location,
           deadline: new Date(deadline).toISOString(),
         }),
@@ -128,17 +130,28 @@ export default function NewRequestPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Budget (USD)</label>
-            <input
-              required
-              value={budget}
-              onChange={(event) => setBudget(event.target.value)}
-              inputMode="decimal"
-              className="w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="220"
-            />
-          </div>
-        </div>
+             <label className="mb-1 block text-sm font-medium text-gray-700">Budget Min (USD)</label>
+             <input
+               required
+               value={budgetMin}
+               onChange={(event) => setBudgetMin(event.target.value)}
+               inputMode="decimal"
+               className="w-full rounded-md border border-gray-300 px-3 py-2"
+               placeholder="180"
+             />
+           </div>
+           <div>
+             <label className="mb-1 block text-sm font-medium text-gray-700">Budget Max (USD)</label>
+             <input
+               required
+               value={budgetMax}
+               onChange={(event) => setBudgetMax(event.target.value)}
+               inputMode="decimal"
+               className="w-full rounded-md border border-gray-300 px-3 py-2"
+               placeholder="230"
+             />
+           </div>
+         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>

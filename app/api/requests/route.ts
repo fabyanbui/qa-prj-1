@@ -2,9 +2,9 @@ import { Prisma, RequestStatus } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import {
-  assertUserHasRole,
   parseIsoDate,
   parseOptionalNumber,
+  requireActiveAccount,
   REQUEST_STATUSES,
 } from '@/lib/server/reverse-marketplace';
 
@@ -13,7 +13,8 @@ interface CreateRequestBody {
   title?: string;
   description?: string;
   category?: string;
-  budget?: number | string;
+  budgetMin?: number | string;
+  budgetMax?: number | string;
   location?: string;
   deadline?: string;
 }
@@ -102,12 +103,17 @@ export async function GET(request: NextRequest) {
 
     const where: Prisma.RequestWhereInput = {};
     if (statusParam) where.status = statusParam as RequestStatus;
-    if (category) where.category = category;
+    if (category) where.category = { contains: category };
     if (location) where.location = { contains: location };
-    if (minBudget !== null || maxBudget !== null) {
-      where.budget = {};
-      if (minBudget !== null) where.budget.gte = minBudget;
-      if (maxBudget !== null) where.budget.lte = maxBudget;
+    const budgetFilters: Prisma.RequestWhereInput[] = [];
+    if (minBudget !== null) {
+      budgetFilters.push({ budgetMax: { gte: minBudget } });
+    }
+    if (maxBudget !== null) {
+      budgetFilters.push({ budgetMin: { lte: maxBudget } });
+    }
+    if (budgetFilters.length > 0) {
+      where.AND = budgetFilters;
     }
     if (deadlineBefore) {
       where.deadline = { lte: deadlineBefore };
@@ -121,8 +127,16 @@ export async function GET(request: NextRequest) {
         buyer: {
           select: {
             id: true,
-            name: true,
             email: true,
+            isAdmin: true,
+            status: true,
+            profile: {
+              select: {
+                displayName: true,
+                avatarUrl: true,
+                location: true,
+              },
+            },
           },
         },
         _count: {
@@ -149,7 +163,8 @@ export async function POST(request: NextRequest) {
       title,
       description,
       category,
-      budget: budgetRaw,
+      budgetMin: budgetMinRaw,
+      budgetMax: budgetMaxRaw,
       location,
       deadline: deadlineRaw,
     } = body;
@@ -158,9 +173,8 @@ export async function POST(request: NextRequest) {
       !buyerId ||
       !title ||
       !description ||
-      !category ||
-      budgetRaw === undefined ||
-      !location ||
+      budgetMinRaw === undefined ||
+      budgetMaxRaw === undefined ||
       !deadlineRaw
     ) {
       return NextResponse.json(
@@ -169,10 +183,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const budget = Number(budgetRaw);
-    if (!Number.isFinite(budget) || budget <= 0) {
+    const budgetMin = Number(budgetMinRaw);
+    const budgetMax = Number(budgetMaxRaw);
+    if (
+      !Number.isFinite(budgetMin) ||
+      !Number.isFinite(budgetMax) ||
+      budgetMin <= 0 ||
+      budgetMax <= 0
+    ) {
       return NextResponse.json(
-        { success: false, message: 'Budget must be a positive number' },
+        { success: false, message: 'Budget values must be positive numbers' },
+        { status: 400 },
+      );
+    }
+
+    if (budgetMin > budgetMax) {
+      return NextResponse.json(
+        { success: false, message: 'budgetMin must be <= budgetMax' },
         { status: 400 },
       );
     }
@@ -185,11 +212,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const buyerRoleCheck = await assertUserHasRole(buyerId, 'BUYER');
-    if (!buyerRoleCheck.ok) {
+    const buyerCheck = await requireActiveAccount(buyerId);
+    if (!buyerCheck.ok) {
       return NextResponse.json(
-        { success: false, message: buyerRoleCheck.message },
-        { status: buyerRoleCheck.status },
+        { success: false, message: buyerCheck.message },
+        { status: buyerCheck.status },
       );
     }
 
@@ -198,9 +225,10 @@ export async function POST(request: NextRequest) {
         buyerId,
         title: title.trim(),
         description: description.trim(),
-        category: category.trim(),
-        budget,
-        location: location.trim(),
+        category: category?.trim(),
+        location: location?.trim(),
+        budgetMin,
+        budgetMax,
         deadline,
         status: 'OPEN',
       },
@@ -208,8 +236,16 @@ export async function POST(request: NextRequest) {
         buyer: {
           select: {
             id: true,
-            name: true,
             email: true,
+            isAdmin: true,
+            status: true,
+            profile: {
+              select: {
+                displayName: true,
+                avatarUrl: true,
+                location: true,
+              },
+            },
           },
         },
       },

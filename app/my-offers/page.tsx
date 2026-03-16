@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/store/auth-context';
 import { MarketplaceOffer, OfferStatus } from '@/types';
@@ -13,6 +13,7 @@ export default function MyOffersPage() {
   const [statusFilter, setStatusFilter] = useState<OfferStatus | 'ALL'>('ALL');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
 
   useEffect(() => {
     if (!isReady) {
@@ -21,55 +22,75 @@ export default function MyOffersPage() {
 
     if (!activeSession) {
       router.push('/login');
-      return;
-    }
-    if (!activeSession.user.roles.includes('SELLER')) {
-      router.push('/');
     }
   }, [activeSession, isReady, router]);
 
-  useEffect(() => {
-    const loadMyOffers = async () => {
-      if (!isReady || !activeSession) return;
+  const loadMyOffers = useCallback(async () => {
+    if (!isReady || !activeSession) return;
 
-      setIsLoading(true);
-      setError('');
-      try {
-        const params = new URLSearchParams({ sellerId: activeSession.user.id });
-        if (statusFilter !== 'ALL') params.set('status', statusFilter);
+    setIsLoading(true);
+    setError('');
+    try {
+      const params = new URLSearchParams({ accountId: activeSession.user.id });
+      if (statusFilter !== 'ALL') params.set('status', statusFilter);
 
-        const response = await fetch(`/api/my-offers?${params.toString()}`);
-        const payload = (await response.json()) as {
-          success: boolean;
-          message?: string;
-          data: MarketplaceOffer[];
-        };
+      const response = await fetch(`/api/my-offers?${params.toString()}`);
+      const payload = (await response.json()) as {
+        success: boolean;
+        message?: string;
+        data: MarketplaceOffer[];
+      };
 
-        if (!response.ok || !payload.success) {
-          setError(payload.message ?? 'Failed to load offers');
-          return;
-        }
-
-        setOffers(payload.data);
-      } catch (offerError) {
-        console.error('Failed to load offers', offerError);
-        setError('Failed to load offers');
-      } finally {
-        setIsLoading(false);
+      if (!response.ok || !payload.success) {
+        setError(payload.message ?? 'Failed to load offers');
+        return;
       }
+
+      setOffers(payload.data);
+    } catch (offerError) {
+      console.error('Failed to load offers', offerError);
+      setError('Failed to load offers');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeSession, isReady, statusFilter]);
+
+  useEffect(() => {
+    void loadMyOffers();
+  }, [loadMyOffers]);
+
+  const withdrawOffer = async (offerId: string) => {
+    if (!activeSession) return;
+
+    setActionMessage('');
+    const response = await fetch(`/api/offers/${offerId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accountId: activeSession.user.id,
+        status: 'WITHDRAWN',
+      }),
+    });
+    const payload = (await response.json()) as {
+      success: boolean;
+      message?: string;
     };
 
-    void loadMyOffers();
-  }, [activeSession, isReady, statusFilter]);
+    if (!response.ok || !payload.success) {
+      setActionMessage(payload.message ?? 'Failed to withdraw offer');
+      return;
+    }
+
+    setActionMessage('Offer withdrawn.');
+    await loadMyOffers();
+  };
 
   if (!isReady || !activeSession) return null;
 
   return (
     <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold text-gray-900">My Offers</h1>
-      <p className="mt-1 text-gray-500">
-        Track all offers you submitted and see which ones become deals.
-      </p>
+      <p className="mt-1 text-gray-500">Track and manage all offers you submitted.</p>
 
       <div className="my-4 flex flex-wrap gap-2">
         {(['ALL', 'PENDING', 'ACCEPTED', 'REJECTED', 'WITHDRAWN'] as const).map((status) => (
@@ -87,6 +108,12 @@ export default function MyOffersPage() {
         ))}
       </div>
 
+      {actionMessage && (
+        <p className="mb-4 rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-700">
+          {actionMessage}
+        </p>
+      )}
+
       {isLoading ? (
         <p className="rounded-lg border border-gray-200 bg-white p-4 text-gray-500">
           Loading your offers...
@@ -102,9 +129,7 @@ export default function MyOffersPage() {
           {offers.map((offer) => (
             <div key={offer.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {offer.request?.title ?? 'Request'}
-                </h2>
+                <h2 className="text-lg font-semibold text-gray-900">{offer.request?.title ?? 'Request'}</h2>
                 <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
                   {offer.status}
                 </span>
@@ -114,21 +139,31 @@ export default function MyOffersPage() {
                 <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">
                   ${offer.price.toFixed(2)}
                 </span>
-                <span className="rounded bg-gray-100 px-2 py-1">{offer.deliveryTime}</span>
                 <span className="rounded bg-gray-100 px-2 py-1">
-                  Buyer {offer.request?.buyer.name ?? 'Unknown'}
+                  {offer.estimatedDeliveryDays} day(s)
+                </span>
+                <span className="rounded bg-gray-100 px-2 py-1">
+                  Buyer {offer.request?.buyer.profile.displayName ?? 'Unknown'}
                 </span>
                 <span className="rounded bg-gray-100 px-2 py-1">
                   Request status {offer.request?.status ?? 'UNKNOWN'}
                 </span>
               </div>
-              <div className="mt-4">
+              <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   href={`/requests/${offer.requestId}`}
-                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-500"
+                  className="rounded-md border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
                 >
-                  Open request details →
+                  Open request details
                 </Link>
+                {offer.status === 'PENDING' && (
+                  <button
+                    onClick={() => void withdrawOffer(offer.id)}
+                    className="rounded-md bg-gray-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-600"
+                  >
+                    Withdraw offer
+                  </button>
+                )}
               </div>
             </div>
           ))}

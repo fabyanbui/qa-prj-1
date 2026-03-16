@@ -43,7 +43,7 @@ export default function HomePage() {
         </h1>
         <p className="mt-3 max-w-3xl text-indigo-800">
           Buyers post requests first, and sellers compete by submitting offers. Compare offers
-          by price and delivery speed, then accept the best one to create a deal.
+          by price and delivery speed, then accept the best one to create an order.
         </p>
 
         {!activeSession ? (
@@ -102,10 +102,10 @@ export default function HomePage() {
               </Link>
             )}
             <Link
-              href="/deals"
+              href="/orders"
               className="rounded-lg border border-indigo-200 bg-white p-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
             >
-              View deals
+              View orders
             </Link>
           </div>
         )}
@@ -138,13 +138,13 @@ export default function HomePage() {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
                   <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                    Budget ${item.budget.toFixed(2)}
+                    Budget ${item.budgetMin.toFixed(2)} - ${item.budgetMax.toFixed(2)}
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-gray-600">{item.description}</p>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
-                  <span className="rounded bg-gray-100 px-2 py-1">{item.category}</span>
-                  <span className="rounded bg-gray-100 px-2 py-1">{item.location}</span>
+                  {item.category && <span className="rounded bg-gray-100 px-2 py-1">{item.category}</span>}
+                  {item.location && <span className="rounded bg-gray-100 px-2 py-1">{item.location}</span>}
                   <span className="rounded bg-gray-100 px-2 py-1">
                     {item._count?.offers ?? 0} offers
                   </span>

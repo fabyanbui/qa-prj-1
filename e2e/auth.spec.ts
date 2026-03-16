@@ -7,10 +7,9 @@ test.describe('Authentication', () => {
 
     const signupResponse = await request.post('/api/auth/signup', {
       data: {
-        name: 'Login User',
+        displayName: 'Login User',
         email,
         password,
-        roles: ['BUYER'],
       },
     });
     expect(signupResponse.ok()).toBeTruthy();

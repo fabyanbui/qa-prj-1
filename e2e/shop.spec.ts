@@ -8,10 +8,9 @@ test.describe('Buyer request flow', () => {
 
     const signupResponse = await request.post('/api/auth/signup', {
       data: {
-        name: 'Buyer Flow',
+        displayName: 'Buyer Flow',
         email: buyerEmail,
         password: buyerPassword,
-        roles: ['BUYER'],
       },
     });
     expect(signupResponse.ok()).toBeTruthy();
@@ -31,7 +30,8 @@ test.describe('Buyer request flow', () => {
       'Need one for home office with ergonomic size.',
     );
     await page.fill('input[placeholder="Furniture"]', 'Furniture');
-    await page.fill('input[placeholder="220"]', '260');
+    await page.fill('input[placeholder="180"]', '240');
+    await page.fill('input[placeholder="230"]', '280');
     await page.fill('input[placeholder="Ho Chi Minh City"]', 'Ho Chi Minh City');
     await page.fill('input[type="date"]', '2026-04-01');
     await page.getByRole('button', { name: /create request/i }).click();
