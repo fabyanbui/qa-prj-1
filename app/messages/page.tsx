@@ -141,7 +141,7 @@ export default function MessagesPage() {
                   onClick={() => setSelectedThread(thread)}
                   className={`w-full rounded-md px-3 py-2 text-left text-sm ${
                     selectedThread?.key === thread.key
-                      ? 'bg-indigo-50 text-indigo-700'
+                      ? 'bg-amber-50 text-amber-700'
                       : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -173,7 +173,7 @@ export default function MessagesPage() {
                       <div
                         key={message.id}
                         className={`rounded-md p-2 text-sm ${
-                          isOwn ? 'ml-10 bg-indigo-100 text-indigo-900' : 'mr-10 bg-white text-gray-800'
+                          isOwn ? 'ml-10 bg-amber-100 text-amber-900' : 'mr-10 bg-white text-gray-800'
                         }`}
                       >
                         <p className="text-xs font-semibold">
@@ -195,7 +195,7 @@ export default function MessagesPage() {
                 />
                 <button
                   type="submit"
-                  className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
+                  className="rounded-md bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500"
                 >
                   Send
                 </button>

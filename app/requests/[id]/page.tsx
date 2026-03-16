@@ -288,7 +288,7 @@ export default function RequestDetailPage() {
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
           {error || 'Request not found'}
         </div>
-        <Link href="/requests" className="mt-4 inline-block text-sm font-semibold text-indigo-600">
+        <Link href="/requests" className="mt-4 inline-block text-sm font-semibold text-amber-600">
           Back to requests
         </Link>
       </div>
@@ -306,7 +306,7 @@ export default function RequestDetailPage() {
         </div>
         <p className="mt-3 text-sm text-gray-600">{requestData.description}</p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-500">
-          <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">
+          <span className="rounded bg-amber-50 px-2 py-1 text-amber-700">
             Budget ${requestData.budgetMin.toFixed(2)} - ${requestData.budgetMax.toFixed(2)}
           </span>
           {requestData.category && <span className="rounded bg-gray-100 px-2 py-1">{requestData.category}</span>}
@@ -371,7 +371,7 @@ export default function RequestDetailPage() {
           <button
             type="submit"
             disabled={isSubmittingOffer}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+            className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
           >
             {isSubmittingOffer ? 'Submitting offer...' : 'Submit offer'}
           </button>
@@ -419,7 +419,7 @@ export default function RequestDetailPage() {
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
-                  <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">
+                  <span className="rounded bg-amber-50 px-2 py-1 text-amber-700">
                     ${offer.price.toFixed(2)}
                   </span>
                   <span className="rounded bg-white px-2 py-1">
@@ -481,7 +481,7 @@ export default function RequestDetailPage() {
                   <div
                     key={message.id}
                     className={`rounded-md p-2 text-sm ${
-                      isOwn ? 'ml-10 bg-indigo-100 text-indigo-900' : 'mr-10 bg-white text-gray-800'
+                      isOwn ? 'ml-10 bg-amber-100 text-amber-900' : 'mr-10 bg-white text-gray-800'
                     }`}
                   >
                     <p className="text-xs font-semibold">
@@ -504,7 +504,7 @@ export default function RequestDetailPage() {
             />
             <button
               type="submit"
-              className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
+              className="rounded-md bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500"
             >
               Send
             </button>

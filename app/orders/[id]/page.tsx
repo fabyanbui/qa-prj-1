@@ -149,7 +149,7 @@ export default function OrderDetailPage() {
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
           {error || 'Order not found'}
         </div>
-        <Link href="/orders" className="mt-4 inline-block text-sm font-semibold text-indigo-600">
+        <Link href="/orders" className="mt-4 inline-block text-sm font-semibold text-amber-600">
           Back to orders
         </Link>
       </div>
@@ -164,7 +164,7 @@ export default function OrderDetailPage() {
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-      <Link href="/orders" className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+      <Link href="/orders" className="text-sm font-semibold text-amber-600 hover:text-amber-500">
         ← Back to orders
       </Link>
 
@@ -278,7 +278,7 @@ export default function OrderDetailPage() {
             <button
               type="submit"
               disabled={isSubmittingReview}
-              className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+              className="rounded-md bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
             >
               {isSubmittingReview ? 'Submitting...' : 'Submit review'}
             </button>

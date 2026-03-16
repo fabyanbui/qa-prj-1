@@ -6,15 +6,28 @@ import { toSessionUser } from '@/lib/server/reverse-marketplace';
 interface SignupBody {
   email?: string;
   password?: string;
-  displayName?: string;
+}
+
+function toDisplayNameFromEmail(email: string) {
+  const localPart = email.split('@')[0]?.trim() ?? '';
+  const cleaned = localPart.replace(/[._-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!cleaned) {
+    return 'ShopPy User';
+  }
+
+  return cleaned
+    .split(' ')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as SignupBody;
-    const { email, password, displayName } = body;
+    const { email, password } = body;
+    const normalizedEmail = email?.trim();
 
-    if (!email || !password || !displayName) {
+    if (!normalizedEmail || !password) {
       return NextResponse.json(
         { success: false, message: 'Missing required fields' },
         { status: 400 },
@@ -22,7 +35,7 @@ export async function POST(request: Request) {
     }
 
     const existingAccount = await prisma.account.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingAccount) {
@@ -34,11 +47,11 @@ export async function POST(request: Request) {
 
     const account = await prisma.account.create({
       data: {
-        email,
+        email: normalizedEmail,
         passwordHash: hashPassword(password),
         profile: {
           create: {
-            displayName: displayName.trim(),
+            displayName: toDisplayNameFromEmail(normalizedEmail),
           },
         },
       },

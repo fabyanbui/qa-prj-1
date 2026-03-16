@@ -51,7 +51,7 @@ npx prisma db seed
 - Auth is intentionally demo-style:
   - Mock JWT tokens (`mock-jwt-token-*`).
   - Plaintext password checks/storage in auth routes.
-  - Multiple local sessions are supported and persisted in `localStorage` keys `auth_sessions` and `active_session_email`.
+  - Only one active local session is supported and persisted in `localStorage` key `auth_session` (legacy multi-session keys are migrated).
 - Cart state is persisted in `localStorage` key `cart`.
 - `AddToCartButton` intentionally returns `null` for unauthenticated users.
 - Seller features are role-gated in the client using `activeSession.user.roles.includes('SELLER')` and redirect non-seller users away from seller pages.

@@ -179,7 +179,7 @@ export default function NewRequestPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+          className="rounded-md bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
         >
           {isSubmitting ? 'Creating request...' : 'Create request'}
         </button>

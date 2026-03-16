@@ -28,9 +28,9 @@ export default function LoginPage() {
         <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
             <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-10 shadow-xl">
                 <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Add Account</h2>
+                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign In</h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
-                        Sign in to another account to switch between them.
+                        Sign in to your ShopPy account.
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -44,7 +44,7 @@ export default function LoginPage() {
                             <input
                                 type="email"
                                 required
-                                className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                                className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-amber-500 focus:outline-none focus:ring-amber-500 sm:text-sm"
                                 placeholder="Email address"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -54,7 +54,7 @@ export default function LoginPage() {
                             <input
                                 type="password"
                                 required
-                                className="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                                className="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-amber-500 focus:outline-none focus:ring-amber-500 sm:text-sm"
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -66,7 +66,7 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                            className="group relative flex w-full justify-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50"
                         >
                             {isLoading ? 'Signing in...' : 'Sign in'}
                         </button>
@@ -75,12 +75,12 @@ export default function LoginPage() {
                 <div className="text-center space-y-2">
                     <p className="text-sm text-gray-600">
                         Don&apos;t have an account?{' '}
-                        <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+                        <Link href="/signup" className="font-medium text-amber-600 hover:text-amber-500">
                             Sign up
                         </Link>
                     </p>
-                    <Link href="/" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                        Back to ReverseMarket
+                    <Link href="/" className="text-sm font-medium text-amber-600 hover:text-amber-500">
+                        Back to ShopPy
                     </Link>
                 </div>
             </div>

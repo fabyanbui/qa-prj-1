@@ -83,7 +83,7 @@ export default function NotificationsPage() {
             <div
               key={notification.id}
               className={`rounded-xl border p-4 shadow-sm ${
-                notification.read ? 'border-gray-200 bg-white' : 'border-indigo-200 bg-indigo-50'
+                notification.read ? 'border-gray-200 bg-white' : 'border-amber-200 bg-amber-50'
               }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -97,7 +97,7 @@ export default function NotificationsPage() {
                 {!notification.read && (
                   <button
                     onClick={() => void markRead(notification)}
-                    className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+                    className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-500"
                   >
                     Mark as read
                   </button>

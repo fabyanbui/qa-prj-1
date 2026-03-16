@@ -180,7 +180,7 @@ export default function MyRequestsPage() {
         </div>
         <Link
           href="/requests/new"
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+          className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-500"
         >
           New request
         </Link>
@@ -193,7 +193,7 @@ export default function MyRequestsPage() {
             onClick={() => setStatusFilter(status)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               statusFilter === status
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-amber-600 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -203,7 +203,7 @@ export default function MyRequestsPage() {
       </div>
 
       {actionMessage && (
-        <p className="mb-4 rounded-md border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-700">
+        <p className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
           {actionMessage}
         </p>
       )}
@@ -233,7 +233,7 @@ export default function MyRequestsPage() {
               </div>
               <p className="mt-2 text-sm text-gray-600">{item.description}</p>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">
+                <span className="rounded bg-amber-50 px-2 py-1 text-amber-700">
                   Budget ${item.budgetMin.toFixed(2)} - ${item.budgetMax.toFixed(2)}
                 </span>
                 {item.category && <span className="rounded bg-gray-100 px-2 py-1">{item.category}</span>}
@@ -245,7 +245,7 @@ export default function MyRequestsPage() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link
                   href={`/requests/${item.id}`}
-                  className="rounded-md border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
+                  className="rounded-md border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50"
                 >
                   View details
                 </Link>
@@ -333,7 +333,7 @@ export default function MyRequestsPage() {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded-md bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500"
+              className="rounded-md bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500"
             >
               Save changes
             </button>

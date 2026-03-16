@@ -8,7 +8,6 @@ test.describe('Buyer request flow', () => {
 
     const signupResponse = await request.post('/api/auth/signup', {
       data: {
-        displayName: 'Buyer Flow',
         email: buyerEmail,
         password: buyerPassword,
       },

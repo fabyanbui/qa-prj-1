@@ -11,7 +11,6 @@ test('seller submits offer and buyer accepts to create order', async ({
 
   const buyerSignupResponse = await request.post('/api/auth/signup', {
     data: {
-      displayName: 'Lifecycle Buyer',
       email: buyerEmail,
       password,
     },
@@ -25,7 +24,6 @@ test('seller submits offer and buyer accepts to create order', async ({
 
   const sellerSignupResponse = await request.post('/api/auth/signup', {
     data: {
-      displayName: 'Lifecycle Seller',
       email: sellerEmail,
       password,
     },

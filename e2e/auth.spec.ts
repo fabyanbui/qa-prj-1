@@ -1,13 +1,24 @@
 import { test, expect } from '@playwright/test';
 
+function toExpectedDisplayName(email: string) {
+  return email
+    .split('@')[0]
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
 test.describe('Authentication', () => {
   test('allows existing user login', async ({ page, request }) => {
     const email = `login-${Date.now()}@example.com`;
     const password = 'password123';
+    const expectedDisplayName = toExpectedDisplayName(email);
 
     const signupResponse = await request.post('/api/auth/signup', {
       data: {
-        displayName: 'Login User',
         email,
         password,
       },
@@ -20,20 +31,20 @@ test.describe('Authentication', () => {
     await page.locator('form button[type="submit"]').click();
 
     await expect(page).toHaveURL('/');
-    await expect(page.getByText('Reverse Marketplace')).toBeVisible();
-    await expect(page.getByText('Login User')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'ShopPy' })).toBeVisible();
+    await expect(page.getByText(expectedDisplayName)).toBeVisible();
   });
 
   test('allows new user signup', async ({ page }) => {
     const uniqueEmail = `new-${Date.now()}@example.com`;
+    const expectedDisplayName = toExpectedDisplayName(uniqueEmail);
 
     await page.goto('/signup');
-    await page.fill('input[placeholder="Full Name"]', 'New Buyer');
     await page.fill('input[placeholder="Email address"]', uniqueEmail);
     await page.fill('input[placeholder="Password"]', 'password123');
     await page.locator('form button[type="submit"]').click();
 
     await expect(page).toHaveURL('/');
-    await expect(page.getByText('New Buyer')).toBeVisible();
+    await expect(page.getByText(expectedDisplayName)).toBeVisible();
   });
 });

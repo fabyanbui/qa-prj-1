@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'ReverseMarket - Reverse Marketplace MVP',
+  title: 'ShopPy - Marketplace MVP',
   description: 'Buyers post requests first, sellers compete with offers',
 };
 

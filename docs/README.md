@@ -18,3 +18,4 @@ Naming convention for documentation artifacts:
 | `20260224-105517` | [`testing/20260224-105517_manual-test-cases.md`](./testing/20260224-105517_manual-test-cases.md) | Manual test cases |
 | `20260315-000321` | [`guides/20260315-000321_advanced-tutorial.md`](./guides/20260315-000321_advanced-tutorial.md) | Contributor and QA automation guide |
 | `20260315-143507` | [`reports/20260315-143507_session-database-and-dev-fix-report.md`](./reports/20260315-143507_session-database-and-dev-fix-report.md) | Session task report |
+| `20260316-134855` | [`reports/20260316-134855_session-task-report.md`](./reports/20260316-134855_session-task-report.md) | Session task report |

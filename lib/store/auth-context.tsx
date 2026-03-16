@@ -1,195 +1,197 @@
 'use client';
 
 import {
-    createContext,
-    useContext,
-    useEffect,
-    useState,
-    ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
 } from 'react';
 import { AuthSession, User } from '@/types';
 
 interface AuthContextType {
-    sessions: AuthSession[];
-    activeSession: AuthSession | null;
-    login: (email: string, password: string) => Promise<boolean>;
-    signup: (displayName: string, email: string, password: string) => Promise<boolean>;
-    logout: (email: string) => void;
-    switchAccount: (email: string) => void;
-    isLoading: boolean;
-    isReady: boolean;
+  activeSession: AuthSession | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  isLoading: boolean;
+  isReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const SINGLE_SESSION_KEY = 'auth_session';
+const LEGACY_SESSIONS_KEY = 'auth_sessions';
+const LEGACY_ACTIVE_KEY = 'active_session_email';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [sessions, setSessions] = useState<AuthSession[]>([]);
-    const [activeSession, setActiveSession] = useState<AuthSession | null>(null);
-    const [isInitialized, setIsInitialized] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+  const [activeSession, setActiveSession] = useState<AuthSession | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-    const toSessionUser = (rawUser: User): User => {
-        const roles = rawUser.roles ?? ['BUYER', 'SELLER'];
-        return {
-            ...rawUser,
-            roles,
-            profile: {
-                ...rawUser.profile,
-                id: rawUser.profile?.id ?? `profile-${rawUser.id}`,
-                accountId: rawUser.profile?.accountId ?? rawUser.id,
-                displayName: rawUser.profile?.displayName ?? rawUser.email,
-                avatarUrl: rawUser.profile?.avatarUrl ?? null,
-                bio: rawUser.profile?.bio ?? null,
-                phoneNumber: rawUser.profile?.phoneNumber ?? null,
-                location: rawUser.profile?.location ?? null,
-                createdAt: rawUser.profile?.createdAt ?? new Date().toISOString(),
-                updatedAt: rawUser.profile?.updatedAt ?? new Date().toISOString(),
-            },
-        };
+  const toSessionUser = (rawUser: User): User => {
+    const roles = rawUser.roles ?? ['BUYER', 'SELLER'];
+    return {
+      ...rawUser,
+      roles,
+      profile: {
+        ...rawUser.profile,
+        id: rawUser.profile?.id ?? `profile-${rawUser.id}`,
+        accountId: rawUser.profile?.accountId ?? rawUser.id,
+        displayName: rawUser.profile?.displayName ?? rawUser.email,
+        avatarUrl: rawUser.profile?.avatarUrl ?? null,
+        bio: rawUser.profile?.bio ?? null,
+        phoneNumber: rawUser.profile?.phoneNumber ?? null,
+        location: rawUser.profile?.location ?? null,
+        createdAt: rawUser.profile?.createdAt ?? new Date().toISOString(),
+        updatedAt: rawUser.profile?.updatedAt ?? new Date().toISOString(),
+      },
     };
+  };
 
-    // Initial load
-    useEffect(() => {
-        const savedSessions = localStorage.getItem('auth_sessions');
-        const savedActive = localStorage.getItem('active_session_email');
-
-        if (savedSessions) {
-            try {
-                const parsedSessions: AuthSession[] = JSON.parse(savedSessions);
-                const normalizedSessions = parsedSessions.map((session) => ({
-                    ...session,
-                    user: toSessionUser(session.user),
-                }));
-                setSessions(normalizedSessions);
-
-                if (savedActive) {
-                    const active = normalizedSessions.find(s => s.user.email === savedActive);
-                    if (active) setActiveSession(active);
-                }
-            } catch (e) {
-                console.error('Failed to parse auth sessions', e);
-            }
-        }
-        setIsInitialized(true);
-    }, []);
-
-    // Sync to local storage
-    useEffect(() => {
-        if (isInitialized) {
-            localStorage.setItem('auth_sessions', JSON.stringify(sessions));
-            if (activeSession) {
-                localStorage.setItem('active_session_email', activeSession.user.email);
-            } else {
-                localStorage.removeItem('active_session_email');
-            }
-        }
-    }, [sessions, activeSession, isInitialized]);
-
-    const login = async (email: string, password: string) => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                const newSession: AuthSession = {
-                    user: toSessionUser(data.user),
-                    token: data.token,
-                };
-
-                setSessions(prev => {
-                    const filtered = prev.filter(s => s.user.email !== email);
-                    return [...filtered, newSession];
-                });
-                setActiveSession(newSession);
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('Login error', error);
-            return false;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const signup = async (displayName: string, email: string, password: string) => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ displayName, email, password }),
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                const newSession: AuthSession = {
-                    user: toSessionUser(data.user),
-                    token: data.token,
-                };
-
-                setSessions(prev => {
-                    const filtered = prev.filter(s => s.user.email !== email);
-                    return [...filtered, newSession];
-                });
-                setActiveSession(newSession);
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('Signup error', error);
-            return false;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const logout = (email: string) => {
-        setSessions(prev => {
-            const newSessions = prev.filter(s => s.user.email !== email);
-            if (activeSession?.user.email === email) {
-                setActiveSession(newSessions.length > 0 ? newSessions[0] : null);
-            }
-            return newSessions;
+  // Initial load
+  useEffect(() => {
+    const savedSession = localStorage.getItem(SINGLE_SESSION_KEY);
+    if (savedSession) {
+      try {
+        const parsedSession = JSON.parse(savedSession) as AuthSession;
+        setActiveSession({
+          ...parsedSession,
+          user: toSessionUser(parsedSession.user),
         });
-    };
+        setIsInitialized(true);
+        return;
+      } catch (error) {
+        console.error('Failed to parse auth session', error);
+        localStorage.removeItem(SINGLE_SESSION_KEY);
+      }
+    }
 
-    const switchAccount = (email: string) => {
-        const target = sessions.find(s => s.user.email === email);
-        if (target) {
-            setActiveSession(target);
+    const savedSessions = localStorage.getItem(LEGACY_SESSIONS_KEY);
+    const savedActive = localStorage.getItem(LEGACY_ACTIVE_KEY);
+
+    if (savedSessions) {
+      try {
+        const parsedSessions = JSON.parse(savedSessions) as AuthSession[];
+        const normalizedSessions = parsedSessions.map((session) => ({
+          ...session,
+          user: toSessionUser(session.user),
+        }));
+        const migratedSession =
+          (savedActive &&
+            normalizedSessions.find((session) => session.user.email === savedActive)) ??
+          normalizedSessions.at(-1) ??
+          null;
+
+        if (migratedSession) {
+          setActiveSession(migratedSession);
+          localStorage.setItem(SINGLE_SESSION_KEY, JSON.stringify(migratedSession));
         }
-    };
+      } catch (error) {
+        console.error('Failed to parse legacy auth sessions', error);
+      }
+    }
 
-    return (
-        <AuthContext.Provider
-            value={{
-                sessions,
-                activeSession,
-                login,
-                signup,
-                logout,
-                switchAccount,
-                isLoading,
-                isReady: isInitialized,
-            }}
-        >
-            {children}
-        </AuthContext.Provider>
-    );
+    localStorage.removeItem(LEGACY_SESSIONS_KEY);
+    localStorage.removeItem(LEGACY_ACTIVE_KEY);
+    setIsInitialized(true);
+  }, []);
+
+  // Sync to local storage
+  useEffect(() => {
+    if (!isInitialized) {
+      return;
+    }
+
+    if (activeSession) {
+      localStorage.setItem(SINGLE_SESSION_KEY, JSON.stringify(activeSession));
+    } else {
+      localStorage.removeItem(SINGLE_SESSION_KEY);
+    }
+
+    localStorage.removeItem(LEGACY_SESSIONS_KEY);
+    localStorage.removeItem(LEGACY_ACTIVE_KEY);
+  }, [activeSession, isInitialized]);
+
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const newSession: AuthSession = {
+          user: toSessionUser(data.user),
+          token: data.token,
+        };
+        setActiveSession(newSession);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signup = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const newSession: AuthSession = {
+          user: toSessionUser(data.user),
+          token: data.token,
+        };
+        setActiveSession(newSession);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Signup error', error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setActiveSession(null);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        activeSession,
+        login,
+        signup,
+        logout,
+        isLoading,
+        isReady: isInitialized,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-    const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }

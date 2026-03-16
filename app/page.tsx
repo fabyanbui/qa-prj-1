@@ -37,11 +37,11 @@ export default function HomePage() {
 
   return (
     <main className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-      <section className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 sm:p-8">
-        <h1 className="text-3xl font-bold text-indigo-900 sm:text-4xl">
-          Reverse Marketplace
+      <section className="rounded-2xl border border-amber-100 bg-amber-50 p-6 sm:p-8">
+        <h1 className="text-3xl font-bold text-amber-900 sm:text-4xl">
+          ShopPy
         </h1>
-        <p className="mt-3 max-w-3xl text-indigo-800">
+        <p className="mt-3 max-w-3xl text-amber-800">
           Buyers post requests first, and sellers compete by submitting offers. Compare offers
           by price and delivery speed, then accept the best one to create an order.
         </p>
@@ -50,19 +50,19 @@ export default function HomePage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/signup"
-              className="rounded-md bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-md bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-500"
             >
               Create account
             </Link>
             <Link
               href="/login"
-              className="rounded-md border border-indigo-200 bg-white px-4 py-2 font-semibold text-indigo-700 hover:bg-indigo-100"
+              className="rounded-md border border-amber-200 bg-white px-4 py-2 font-semibold text-amber-700 hover:bg-amber-100"
             >
               Sign in
             </Link>
             <Link
               href="/requests"
-              className="rounded-md border border-indigo-200 bg-white px-4 py-2 font-semibold text-indigo-700 hover:bg-indigo-100"
+              className="rounded-md border border-amber-200 bg-white px-4 py-2 font-semibold text-amber-700 hover:bg-amber-100"
             >
               Browse open requests
             </Link>
@@ -72,7 +72,7 @@ export default function HomePage() {
             {isBuyer && (
               <Link
                 href="/requests/new"
-                className="rounded-lg border border-indigo-200 bg-white p-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+                className="rounded-lg border border-amber-200 bg-white p-4 text-sm font-semibold text-amber-700 hover:bg-amber-100"
               >
                 Create a request
               </Link>
@@ -80,7 +80,7 @@ export default function HomePage() {
             {isBuyer && (
               <Link
                 href="/my-requests"
-                className="rounded-lg border border-indigo-200 bg-white p-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+                className="rounded-lg border border-amber-200 bg-white p-4 text-sm font-semibold text-amber-700 hover:bg-amber-100"
               >
                 Review my requests
               </Link>
@@ -88,7 +88,7 @@ export default function HomePage() {
             {isSeller && (
               <Link
                 href="/requests"
-                className="rounded-lg border border-indigo-200 bg-white p-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+                className="rounded-lg border border-amber-200 bg-white p-4 text-sm font-semibold text-amber-700 hover:bg-amber-100"
               >
                 Browse requests to offer
               </Link>
@@ -96,14 +96,14 @@ export default function HomePage() {
             {isSeller && (
               <Link
                 href="/my-offers"
-                className="rounded-lg border border-indigo-200 bg-white p-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+                className="rounded-lg border border-amber-200 bg-white p-4 text-sm font-semibold text-amber-700 hover:bg-amber-100"
               >
                 Track my offers
               </Link>
             )}
             <Link
               href="/orders"
-              className="rounded-lg border border-indigo-200 bg-white p-4 text-sm font-semibold text-indigo-700 hover:bg-indigo-100"
+              className="rounded-lg border border-amber-200 bg-white p-4 text-sm font-semibold text-amber-700 hover:bg-amber-100"
             >
               View orders
             </Link>
@@ -114,7 +114,7 @@ export default function HomePage() {
       <section className="mt-8">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">Recent open requests</h2>
-          <Link href="/requests" className="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+          <Link href="/requests" className="text-sm font-semibold text-amber-600 hover:text-amber-500">
             View all
           </Link>
         </div>
@@ -133,11 +133,11 @@ export default function HomePage() {
               <Link
                 key={item.id}
                 href={`/requests/${item.id}`}
-                className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-indigo-200 hover:shadow"
+                className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:border-amber-200 hover:shadow"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
-                  <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
                     Budget ${item.budgetMin.toFixed(2)} - ${item.budgetMax.toFixed(2)}
                   </span>
                 </div>

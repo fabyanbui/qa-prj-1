@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function SignupPage() {
-    const [displayName, setDisplayName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -17,7 +16,7 @@ export default function SignupPage() {
         e.preventDefault();
         setError('');
 
-        const success = await signup(displayName, email, password);
+        const success = await signup(email, password);
         if (success) {
             router.push('/');
         } else {
@@ -31,7 +30,7 @@ export default function SignupPage() {
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Create Account</h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
-                        Join ReverseMarket to start buying or selling.
+                        Join ShopPy to start buying or selling.
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -43,19 +42,9 @@ export default function SignupPage() {
                     <div className="-space-y-px rounded-md shadow-sm">
                         <div>
                             <input
-                                type="text"
-                                required
-                                className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                                placeholder="Full Name"
-                                value={displayName}
-                                onChange={(e) => setDisplayName(e.target.value)}
-                            />
-                        </div>
-                        <div>
-                            <input
                                 type="email"
                                 required
-                                className="relative block w-full appearance-none rounded-none border-x border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                                className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-amber-500 focus:outline-none focus:ring-amber-500 sm:text-sm"
                                 placeholder="Email address"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -65,7 +54,7 @@ export default function SignupPage() {
                             <input
                                 type="password"
                                 required
-                                className="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                                className="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-amber-500 focus:outline-none focus:ring-amber-500 sm:text-sm"
                                 placeholder="Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -73,7 +62,7 @@ export default function SignupPage() {
                         </div>
                     </div>
 
-                    <p className="rounded-md border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-700">
+                    <p className="rounded-md border border-amber-100 bg-amber-50 p-3 text-xs text-amber-700">
                         Every account can act as both buyer and seller by default.
                     </p>
 
@@ -81,7 +70,7 @@ export default function SignupPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+                            className="group relative flex w-full justify-center rounded-md border border-transparent bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50"
                         >
                             {isLoading ? 'Creating account...' : 'Sign up'}
                         </button>
@@ -90,12 +79,12 @@ export default function SignupPage() {
                 <div className="text-center space-y-2">
                     <p className="text-sm text-gray-600">
                         Already have an account?{' '}
-                        <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+                        <Link href="/login" className="font-medium text-amber-600 hover:text-amber-500">
                             Sign in
                         </Link>
                     </p>
-                    <Link href="/" className="block text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                        Back to ReverseMarket
+                    <Link href="/" className="block text-sm font-medium text-amber-600 hover:text-amber-500">
+                        Back to ShopPy
                     </Link>
                 </div>
             </div>

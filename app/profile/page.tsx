@@ -174,7 +174,7 @@ export default function ProfilePage() {
         <button
           type="submit"
           disabled={isSaving}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+          className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
         >
           {isSaving ? 'Saving...' : 'Save profile'}
         </button>

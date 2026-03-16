@@ -74,7 +74,7 @@ export default function OrdersPage() {
             onClick={() => setStatusFilter(status)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               statusFilter === status
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-amber-600 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -106,7 +106,7 @@ export default function OrdersPage() {
               <Link
                 key={order.id}
                 href={`/orders/${order.id}`}
-                className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-indigo-200 hover:shadow"
+                className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-amber-200 hover:shadow"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h2 className="text-lg font-semibold text-gray-900">{order.request.title}</h2>
@@ -115,7 +115,7 @@ export default function OrdersPage() {
                   </span>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-500">
-                  <span className="rounded bg-indigo-50 px-2 py-1 text-indigo-700">
+                  <span className="rounded bg-amber-50 px-2 py-1 text-amber-700">
                     ${order.finalPrice.toFixed(2)}
                   </span>
                   <span className="rounded bg-gray-100 px-2 py-1">You: {roleLabel}</span>
