@@ -144,10 +144,9 @@ Auth in this project is intentionally demo-style:
 
 Session model:
 
-- multi-account local sessions are supported
+- only one active local session is supported
 - persisted in localStorage:
-  - `auth_sessions`
-  - `active_session_email`
+  - `auth_session`
 
 Role gating:
 

@@ -1,13 +1,16 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
 async function main() {
-    const users = await prisma.user.findMany({
-        include: { roles: true }
-    });
-    console.log(JSON.stringify(users, null, 2));
+  const { PrismaClient } = await import('@prisma/client');
+  const prisma = new PrismaClient();
+
+  const users = await prisma.user.findMany({
+    include: { roles: true },
+  });
+  console.log(JSON.stringify(users, null, 2));
+
+  await prisma.$disconnect();
 }
 
 main()
-    .catch(e => console.error(e))
-    .finally(async () => await prisma.$disconnect());
+  .catch((error) => {
+    console.error(error);
+  });
